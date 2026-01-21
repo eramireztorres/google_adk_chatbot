@@ -1,0 +1,58 @@
+@skill-creator
+My goal is to create a skill to set up an evolutionary optimization experiment using the `openevolve` framework. This framework uses an LLM to iteratively improve a Python code block to maximize a specific score.
+
+Generate the required files (Example `config.yaml`, `evaluator.py`, `initial_program.py`) to solve the Problem Description given by user
+
+The agent with the skill should study
+
+1-
+/home/erick.ramirez/repo/google_adk_chatbot/rag/docs/openevolve/README.md
+
+to understand the framework
+
+2-
+/home/erick.ramirez/repo/google_adk_chatbot/rag/docs/openevolve/openevolve_config_hyperparameters_cheat_sheet.txt
+
+To understand config parameters
+
+3- Example
+
+/home/erick.ramirez/repo/google_adk_chatbot/rag/docs/openevolve/examples/signal_processing/config.yaml
+/home/erick.ramirez/repo/google_adk_chatbot/rag/docs/openevolve/examples/signal_processing/evaluator.py
+/home/erick.ramirez/repo/google_adk_chatbot/rag/docs/openevolve/examples/signal_processing/initial_program.py
+
+If the case needs
+
+diff_based_evolution: true
+
+(The evolution LLM only changes selected parts of initial_program)
+
+4- Example
+
+/home/erick.ramirez/repo/google_adk_chatbot/rag/docs/openevolve/examples/llm_prompt_optimization/config.yaml
+/home/erick.ramirez/repo/google_adk_chatbot/rag/docs/openevolve/examples/llm_prompt_optimization/evaluator.py
+/home/erick.ramirez/repo/google_adk_chatbot/rag/docs/openevolve/examples/llm_prompt_optimization/initial_prompt.txt
+
+If the case needs
+
+diff_based_evolution: false
+
+(The evolution LLM changes the whole text)
+
+Your tasks are:
+
+1- Study above docs
+2- Create the new skill in folder
+
+/home/erick.ramirez/repo/google_adk_chatbot/.agent/skills
+
+
+___
+
+
+@openevolve-experiment
+
+My goal si to create an openevolve experiment that optimizes a RAG pipeline to retrieve info from markdown doc files in
+
+/home/erick.ramirez/repo/google_adk_chatbot/rag/docs/adk_docs
+

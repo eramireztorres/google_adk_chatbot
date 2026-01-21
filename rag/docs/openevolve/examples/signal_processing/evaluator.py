@@ -269,18 +269,8 @@ def evaluate(program_path):
     on multiple test signals and calculates the composite performance metric.
     """
     try:
-        # load the program
+        # Load the program
         spec = importlib.util.spec_from_file_location("program", program_path)
-        
-        # --- DEBUG: Intercept mutated program ---
-        import shutil
-        import os
-        debug_dir = "/home/erick/repo/openevolve/trials/optimum_rag/docs/openevolve/examples/signal_processing/debug_mutations"
-        os.makedirs(debug_dir, exist_ok=True)
-        mutation_id = os.path.basename(program_path)
-        shutil.copy(program_path, os.path.join(debug_dir, f"intercepted_{mutation_id}.py"))
-        # -----------------------------------------
-
         program = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(program)
 
@@ -442,7 +432,7 @@ def evaluate(program_path):
 
         return {
             "composite_score": safe_float(avg_composite_score),
-            "combined_score": safe_float(overall_score),  # Primary selection metric
+            "overall_score": safe_float(overall_score),  # Primary selection metric
             "slope_changes": safe_float(avg_slope_changes),
             "lag_error": safe_float(avg_lag_error),
             "avg_error": safe_float(avg_avg_error),
