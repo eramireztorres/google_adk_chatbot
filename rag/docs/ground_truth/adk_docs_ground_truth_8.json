@@ -1,0 +1,58 @@
+[
+  {
+    "input": "Provide the Python code from the ADK quickstart that defines the get_current_time tool and the root_agent.",
+    "expected_output": "```python\nfrom google.adk.agents.llm_agent import Agent\n\n# Mock tool implementation\ndef get_current_time(city: str) -> dict:\n    \"\"\"Returns the current time in a specified city.\"\"\"\n    return {\"status\": \"success\", \"city\": city, \"time\": \"10:30 AM\"}\n\nroot_agent = Agent(\n    model='gemini-3-pro-preview',\n    name='root_agent',\n    description=\"Tells the current time in a specified city.\",\n    instruction=\"You are a helpful assistant that tells the current time in cities. Use the 'get_current_time' tool for this purpose.\",\n    tools=[get_current_time],\n)\n```",
+    "context": [
+      "Update the generated agent.py code to include a get_current_time tool for use by the agent."
+    ]
+  },
+  {
+    "input": "Give the Python example of a Function Tool with required parameters city and unit from the ADK function tools documentation.",
+    "expected_output": "```python\ndef get_weather(city: str, unit: str):\n    \"\"\"\n    Retrieves the weather for a city in the specified unit.\n\n    Args:\n        city (str): The city name.\n        unit (str): The temperature unit, either 'Celsius' or 'Fahrenheit'.\n    \"\"\"\n    # ... function logic ...\n    return {\"status\": \"success\", \"report\": f\"Weather for {city} is sunny.\"}\n```",
+    "context": [
+      "A parameter is required if it has a type hint and no default value. Example shows get_weather(city: str, unit: str)."
+    ]
+  },
+  {
+    "input": "Show the Python example that registers a before_model callback in an LlmAgent.",
+    "expected_output": "```python\nfrom google.adk.agents import LlmAgent\nfrom google.adk.agents.callback_context import CallbackContext\nfrom google.adk.models import LlmResponse, LlmRequest\nfrom typing import Optional\n\n# --- Define your callback function ---\ndef my_before_model_logic(\n    callback_context: CallbackContext, llm_request: LlmRequest\n) -> Optional[LlmResponse]:\n    print(f\"Callback running before model call for agent: {callback_context.agent_name}\")\n    # ... your custom logic here ...\n    return None # Allow the model call to proceed\n\n# --- Register it during Agent creation ---\nmy_agent = LlmAgent(\n    name=\"MyCallbackAgent\",\n    model=\"gemini-2.0-flash\", # Or your desired model\n    instruction=\"Be helpful.\",\n    # Other agent parameters...\n    before_model_callback=my_before_model_logic # Pass the function here\n)\n```",
+    "context": [
+      "Callbacks are added by defining a callback function and passing it via before_model_callback when creating the agent."
+    ]
+  },
+  {
+    "input": "From the MCP tools documentation, provide the Python agent.py sample that connects to a local filesystem MCP server started via npx and exposes its tools through MCPToolset.",
+    "expected_output": "```python\n# ./adk_agent_samples/mcp_agent/agent.py\nimport os # Required for path operations\nfrom google.adk.agents import LlmAgent\nfrom google.adk.tools.mcp_tool.mcp_toolset import MCPToolset\nfrom google.adk.tools.mcp_tool.mcp_session_manager import StdioConnectionParams\nfrom mcp import StdioServerParameters\n\n# It's good practice to define paths dynamically if possible,\n# or ensure the user understands the need for an ABSOLUTE path.\n# For this example, we'll construct a path relative to this file,\n# assuming '/path/to/your/folder' is in the same directory as agent.py.\n# REPLACE THIS with an actual absolute path if needed for your setup.\nTARGET_FOLDER_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), \"/path/to/your/folder\")\n# Ensure TARGET_FOLDER_PATH is an absolute path for the MCP server.\n# If you created ./adk_agent_samples/mcp_agent/your_folder,\n\nroot_agent = LlmAgent(\n    model='gemini-2.0-flash',\n    name='filesystem_assistant_agent',\n    instruction='Help the user manage their files. You can list files, read files, etc.',\n    tools=[\n        MCPToolset(\n            connection_params=StdioConnectionParams(\n                server_params = StdioServerParameters(\n                    command='npx',\n                    args=[\n                        \"-y\",  # Argument for npx to auto-confirm install\n                        \"@modelcontextprotocol/server-filesystem\",\n                        # IMPORTANT: This MUST be an ABSOLUTE path to a folder the\n                        # npx process can access.\n                        # Replace with a valid absolute path on your system.\n                        # For example: \"/Users/youruser/accessible_mcp_files\"\n                        # or use a dynamically constructed absolute path:\n                        os.path.abspath(TARGET_FOLDER_PATH),\n                    ],\n                ),\n            ),\n            # Optional: Filter which tools from the MCP server are exposed\n            # tool_filter=['list_directory', 'read_file']\n        )\n    ],\n)\n```",
+    "context": [
+      "MCPToolset is instantiated in the tools list of an LlmAgent using StdioConnectionParams to connect to a local MCP server."
+    ]
+  },
+  {
+    "input": "Show the Python snippet where an LlmAgent uses output_key to store last_greeting and a Runner executes it with InMemorySessionService.",
+    "expected_output": "```python\nfrom google.adk.agents import LlmAgent\nfrom google.adk.sessions import InMemorySessionService, Session\nfrom google.adk.runners import Runner\nfrom google.genai.types import Content, Part\n\n# Define agent with output_key\ngreeting_agent = LlmAgent(\n    name=\"Greeter\",\n    model=\"gemini-2.0-flash\", # Use a valid model\n    instruction=\"Generate a short, friendly greeting.\",\n    output_key=\"last_greeting\" # Save response to state['last_greeting']\n)\n\n# --- Setup Runner and Session ---\napp_name, user_id, session_id = \"state_app\", \"user1\", \"session1\"\nsession_service = InMemorySessionService()\nrunner = Runner(\n    agent=greeting_agent,\n    app_name=app_name,\n    session_service=session_service\n)\nsession = await session_service.create_session(app_name=app_name,\n                                    user_id=user_id,\n                                    session_id=session_id)\nprint(f\"Initial state: {session.state}\")\n\n# --- Run the Agent ---\n# Runner handles calling append_event, which uses the output_key\n# to automatically create the state_delta.\nuser_message = Content(parts=[Part(text=\"Hello\")])\nfor event in runner.run(user_id=user_id,\n                        session_id=session_id,\n                        new_message=user_message):\n    if event.is_final_response():\n      print(f\"Agent responded.\") # Response text is also in event.content\n\n# --- Check Updated State ---\nupdated_session = await session_service.get_session(app_name=APP_NAME, user_id=USER_ID, session_id=session_id)\nprint(f\"State after agent run: {updated_session.state}\")\n# Expected output might include: {'last_greeting': 'Hello there! How can I help you today?'}\n```",
+    "context": [
+      "Using output_key is the simplest way to save an agent's final response to session.state."
+    ]
+  },
+  {
+    "input": "In ADK, what is session.state and how does it differ from session.events?",
+    "expected_output": "Within each Session, session.state acts like the agent's scratchpad for dynamic details needed during the conversation, while session.events holds the full conversation history. The state is a key-value collection designed to change as the conversation evolves, whereas events record what happened.",
+    "context": [
+      "Within each Session, the state attribute acts like the agent's dedicated scratchpad. While session.events holds the full history."
+    ]
+  },
+  {
+    "input": "How is context compaction configured in ADK, and what do compaction_interval and overlap_size mean?",
+    "expected_output": "Context compaction is configured by adding EventsCompactionConfig to the App. The compaction_interval sets how many completed events (invocations) trigger compaction, and overlap_size sets how many previously compacted events are included in the next summary window. Once configured, the Runner performs compaction in the background when the interval is reached.",
+    "context": [
+      "Add EventsCompactionConfig to the App with compaction_interval and overlap_size; Runner handles compaction in the background."
+    ]
+  },
+  {
+    "input": "What is MCP in ADK and how does MCPToolset integrate MCP servers?",
+    "expected_output": "MCP (Model Context Protocol) is a client-server protocol for exposing resources and tools from an MCP server to an MCP client. In ADK, MCPToolset manages the connection to the MCP server (local via StdioConnectionParams or remote via SseConnectionParams), discovers tools via list_tools, and proxies tool calls via call_tool so the tools appear as ADK tools to an LlmAgent.",
+    "context": [
+      "MCP follows a client-server architecture. MCPToolset connects to an MCP server, discovers tools, and proxies tool calls."
+    ]
+  }
+]
