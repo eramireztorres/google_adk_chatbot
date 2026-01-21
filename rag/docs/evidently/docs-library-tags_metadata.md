@@ -1,0 +1,82 @@
+---
+url: https://docs.evidentlyai.com/docs/library/tags_metadata
+source: Evidently Documentation
+---
+
+This is relevant when you logging Reports to the Platform. Tags help you associate each Report with a specific model / prompt version, time period, or other context.
+
+## [​](#add-timestamp) Add timestamp
+
+Each Report run has a single timestamp. By default, Evidently assigns `datetime.now()` as the run time based on the user’s time zone.
+You can also specify a custom timestamp by passing it to the `run()` method:
+
+Copy
+
+```python
+from datetime import datetime
+
+my_eval_4 = report.run(eval_data_1,
+                       eval_data_2,
+                       timestamp=datetime(2024, 1, 29))
+```
+
+Because timestamps are fully customizable, you can log Reports asynchronously or with a delay. For example, make an evaluation after receiving ground truth and backdate Reports to the relevant time period.
+
+## [​](#add-tags-and-metadata) Add tags and metadata
+
+You can add `tags` and `metadata` to Reports to support search and ease of filtering. Tags also let you visualize data from specific subsets of Reports on monitoring Panels.
+Use tags in the following scenarios:
+
+* Mark evaluation runs by model version, prompt version, or test scenario.
+* Indicate status: production, shadow, champion/challenger, A/B versions.
+* Identify Reports by geography, use case, user segment, or role.
+* Tag based on reference dataset windows (for example, weekly vs. monthly drift comparisons)
+* Highlight Reports with a specific role, such as datasheet or model card.
+
+**Custom tags**. You can add tags to the Report. Pass any custom Tags as a list:
+
+Copy
+
+```python
+report = Report([
+    ClassificationPreset()
+],
+tags=["classification", "production"])
+```
+
+**Custom metadata**. Pass metadata as a Python dictionary in key:value pairs:
+
+Copy
+
+```python
+report = Report([
+    ClassificationPreset()
+],
+metadata = {
+	"deployment": "shadow",
+	"status": "production",
+	})
+```
+
+**Default metadata**. Use built-in metadata fields `model_id`, `reference_id`, `batch_size`, `dataset_id`:
+
+Copy
+
+```python
+report = Report([
+    ClassificationPreset()
+],
+  model_id="model_id",
+	reference_id="reference_id",
+	batch_size="batch_size",
+	dataset_id="dataset_id"
+)
+```
+
+**Add tags to run**: You can also tag individual Report runs. This is useful for experiments where you re-run the same Report with different prompts or hyperparameter settings.
+
+Copy
+
+```python
+my_eval = report.run(eval_data_1, eval_data_2, tags=["prompt_v1", "claude"])
+```

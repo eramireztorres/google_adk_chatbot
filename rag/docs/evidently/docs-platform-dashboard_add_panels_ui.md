@@ -1,0 +1,60 @@
+---
+url: https://docs.evidentlyai.com/docs/platform/dashboard_add_panels_ui
+source: Evidently Documentation
+---
+
+Dashboards let you create Panels to visualize evaluation results over time. Note that to be able to populate the panels, you must first add Reports with evaluation results to the Project.
+
+No-code Dashboards are available in the Evidently Cloud and Enterprise.
+
+## [​](#adding-tabs) Adding Tabs
+
+By default, new Panels appear on a single Dashboard. You can add multiple Tabs to organize them.
+**To add a Tab**:
+
+* Enter “Edit” mode on the Dashboard (top right corner).
+* Click the plus sign with “add Tab” on the left.
+* To create a custom Tab, select “empty” and enter a name.
+
+To simplify setup, you can start with pre-built Tabs. These are dashboard templates with preset Panel combinations:
+![Add Dashboard Tab](https://mintlify.s3.us-west-1.amazonaws.com/evi/images/dashboard/add_dashboard_tab_v2.gif)
+**Pre-built Tabs** rely on having related Metrics (or Presets that include the specific Metrics) within the Project. If the necessary data is not available, the Panels will appear empty until you add Reports that contain those Metrics.
+Available Tabs:
+
+| Template | Description | Data source |
+| --- | --- | --- |
+| **Columns** | Shows the results of text evaluations over time OR plots column distributions over time for categorical and numerical columns. | `TextEvals()`, `DataSumaryPreset()`or`ValueStats()` for individual columns. |
+
+**To delete a Tab**: enter the “Edit” mode again, choose “edit Tabs” sign next to the Tab names on the left, and choose which one to delete.
+
+## [​](#adding-panels) Adding Panels
+
+You can add any number of Panels to your Dashboard, including text panels, counters, pie charts, line plots, and bar plots (grouped and stacked). When you create a Panel, you pull the corresponding value from multiple Reports and show it over time or using the specified aggregation (sum, average, last).
+
+Check the preview and description of each Panel here: [How to add panels via Python API](dashboard_add_panels).
+
+**How to add a Panel:**
+
+* Enter “Edit” mode on the Dashboard (top right corner).
+* Click on the “Add Panel” button next to it.
+* Follow the prompts to configure the panel.
+* Use the preview to review your setup.
+* Click “Save” and select the Tab where you want to add the Panel.
+
+Here is an example of the panel configuration view:
+![](https://mintlify.s3.us-west-1.amazonaws.com/evi/images/dashboard/add_panel_ui.png)
+
+* **Select Metrics**. To point to a specific Metric, you must choose the Metric name that matches the name of the Evidently Metric logged inside the Reports in the given Project.
+* **Filter by Tag.** By default, the metrics will be parsed from all Reports in the Project. Use the “From” field to filter by Tags. (You must first attach these tags to the corresponding Reports).
+* **Filter by Metric label.** If you have a single Metric of that type in the Project (like `RowCount`), it may be enough to just specify the metric name. However, if you have multiple instances of the same metric - as is often the case for column-level Metrics like `UniqueValueCount` - you need to specify additional parameters. Use the “Where” selector to specify further keys like:
+  + **Column**: Use this to select the name of the column or descriptor.
+  + **Value type**: Choose whether to plot value or count for metrics that return both.You can see all keys available for a given Metric in the dropdown menu. You can add multiple keys, depending on the metric type, like metric-specific parameters.
+* **Set Legend**. You can use the “Label” field to modify what appears on the legend.
+* **Set Panel Type**. You can also specify the plot type and aggregation level.
+
+For example, you can switch the view for the same metric as on the screenshot above to a pie chart and set the view to show only the last value instead of all values over time:
+![](https://mintlify.s3.us-west-1.amazonaws.com/evi/images/dashboard/add_panel_ui_pie.png)
+
+## [​](#deleting/editing) **Deleting/Editing**
+
+To delete or edit a Panel, enter Edit mode and hover over a specific Panel to choose an action.

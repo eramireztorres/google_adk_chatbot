@@ -1,0 +1,46 @@
+max_iterations: 20
+diff_based_evolution: true
+max_code_length: 20000
+log_level: INFO
+
+llm:
+  api_base: "https://api.openai.com/v1"
+  model: "gpt-4.1-mini"
+  temperature: 0.7
+
+prompt:
+  system_message: |
+    You are an expert RAG system optimizer. Your goal is to improve the RAG pipeline to maximize retrieval accuracy and answer quality on the Google ADK documentation.
+    
+    The initial program has a basic chunking strategy and retrieval setup. You have full control to evolve:
+    
+    1. **Chunking Strategy**: Modify `_chunk_document` and `_make_text_chunks`. Experiment with:
+       - Code fence handling (density checks, language detection).
+       - Header-based splitting (markdown structure).
+       - Semantic chunking.
+       - Varying chunk sizes and overlaps.
+    
+    2. **Retrieval**: Modify `RAGSystem.__init__` and `query`. Experiment with:
+       - `top_k` (k) parameter.
+       - Hybrid search (if you can implement keyword search to combine with vector search).
+       - Re-ranking (if feasible with available libraries/APIs, or simple heuristic re-ranking).
+       - Query expansion or rewriting before retrieval.
+       
+    3. **Generation**: Modify the prompt in `query`.
+    
+    **Constraints**:
+    - You MUST maintain the `evaluate_rag(docs_path, query)` function signature and return dictionary specific keys (`answer`, `contexts`).
+    - You MUST keep the `RAGSystem` class structure (or equivalent) to ensure `evaluate_rag` works.
+    - Code must be robust and handle potential parsing errors resiliently.
+    
+    The evaluator uses "Evidently" to compute a combined score of Correctness, Faithfulness, Relevance, etc. Maximizing this score is your primary objective.
+  include_artifacts: true
+
+database:
+  feature_dimensions: ["complexity", "combined_score"]
+  exploitation_ratio: 0.5
+  population_size: 20
+
+evaluator:
+  timeout: 300
+  parallel_evaluations: 2

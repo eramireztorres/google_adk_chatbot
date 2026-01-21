@@ -1,0 +1,145 @@
+---
+url: https://docs.evidentlyai.com/metrics/customize_descriptor
+source: Evidently Documentation
+---
+
+To run a check not available in Evidently, you can implement it as a custom function. Use this for building your own programmatic evaluators.
+
+You can also customize existing evals with parameters, such as defining custom [LLM judges](/metrics/customize_llm_judge)  or using regex-based metrics like `Contains` for word lists. See [available descriptors](/metrics/all_descriptors).
+
+**Pre-requisites**:
+
+* You know how to use built-in [descriptors](/docs/library/descriptors).
+
+## [​](#imports) Imports
+
+Copy
+
+```python
+import pandas as pd
+
+from evidently import Dataset, DataDefinition
+from evidently.core.datasets import DatasetColumn
+from evidently.descriptors import CustomColumnDescriptor, CustomDescriptor
+```
+
+Toy data to run the example
+
+To generate toy data and create a Dataset object:
+
+Copy
+
+```python
+data = [
+    ["Can fish fly?", "no", ""],
+    ["Is the sky blue?", "yes", "yes"],
+    ["Is milk liquid??", "yes", "yes"]
+]
+
+columns = ["question", "target_answer", "answer"]
+
+df = pd.DataFrame(data, columns=columns)
+
+eval_df = Dataset.from_pandas(
+    df,
+    data_definition=DataDefinition())
+```
+
+## [​](#single-column-check) Single column check
+
+You can define a `CustomColumnDescriptor` that will:
+
+* take any column from your dataset to evaluate each value inside it
+* return a single column with numerical (`num`) scores or categorical (`cat`) labels.
+
+Implement it as a Python function that takes a Pandas Series as input and return a transformed Series. For example, to check if the column is empty:
+
+Copy
+
+```python
+def is_empty(data: DatasetColumn) -> DatasetColumn:
+    return DatasetColumn(
+        type="cat",
+        data=pd.Series([
+            "EMPTY" if val == "" else "NON EMPTY"
+            for val in data.data]))
+```
+
+To use this descriptor on your data:
+
+Copy
+
+```python
+eval_df.add_descriptors(descriptors=[
+    CustomColumnDescriptor("answer", is_empty, alias="is_empty"),
+])
+```
+
+Publish to a dataframe:
+
+Copy
+
+```python
+eval_df.as_dataframe()
+```
+
+## [​](#multi-column-check) Multi-column check
+
+You can alternatively define a `CustomDescriptor` that:
+
+* Takes one or many named columns from your dataset,
+* Returns one or many transformed columns.
+
+**Pairwise evaluation**. For example, to check exact match between `target_answer` and `answer` columns, and return a label:
+
+Copy
+
+```python
+def exact_match(dataset: Dataset) -> DatasetColumn:
+    return DatasetColumn(
+        type="cat",
+        data=pd.Series([
+            "MATCH" if val else "MISMATCH"
+            for val in dataset.column("target_answer").data
+            == dataset.column("answer").data]))
+```
+
+To use this descriptor on your data:
+
+Copy
+
+```python
+eval_df.add_descriptors(descriptors=[
+    CustomDescriptor(exact_match, alias="exact"),
+])
+```
+
+**Multiple scores**. You can also use `CustomDescriptor` to run evals for multiple columns and return multiple scores.
+As a fun example, let’s reverse all words in the `question` and `answer` columns:
+
+Copy
+
+```python
+from typing import Union, Dict
+
+def reverse_text(dataset: Dataset) -> Union[DatasetColumn, Dict[str, DatasetColumn]]:
+    return {
+        "reversed_question": DatasetColumn(
+            type="cat",
+            data=pd.Series([
+                value[::-1] for value in dataset.column("question").data])),
+        "reversed_answer": DatasetColumn(
+            type="cat",
+            data=pd.Series([
+                value[::-1] for value in dataset.column("answer").data]))}
+```
+
+To use this descriptor on your data:
+
+Copy
+
+```python
+eval_df.add_descriptors(descriptors=[
+    CustomDescriptor(reverse_text),
+])
+```

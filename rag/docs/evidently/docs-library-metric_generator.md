@@ -1,0 +1,127 @@
+---
+url: https://docs.evidentlyai.com/docs/library/metric_generator
+source: Evidently Documentation
+---
+
+Sometimes you need to generate multiple column-level Tests or Metrics. To simplify this, you can use metric generator helper functions.
+**Pre-requisites**:
+
+* You know how to [generate Reports](/docs/library/report).
+
+## [​](#imports) Imports
+
+Generate data
+
+Use the following code to generate toy data for this guide.
+
+Copy
+
+```python
+import pandas as pd
+import numpy as np
+from evidently import Dataset
+from evidently import DataDefinition
+
+np.random.seed(42)
+
+data = {
+    "Age": np.random.randint(18, 60, size=30),
+    "Salary": np.random.randint(30000, 120000, size=30),
+    "Department": np.random.choice(["HR", "IT", "Finance", "Marketing", "Operations"], size=30),
+    "YearsExperience": np.random.randint(1, 15, size=30),  
+    "EducationLevel": np.random.choice(["High School", "Bachelor", "Master", "PhD"], size=30)  
+}
+
+dummy_df = pd.DataFrame(data)
+
+eval_data_1 = Dataset.from_pandas(
+    dummy_df.iloc[:15],
+    data_definition=DataDefinition()
+)
+eval_data_2 = Dataset.from_pandas(
+    dummy_df.iloc[15:],
+    data_definition=DataDefinition()
+)
+```
+
+Imports
+
+Copy
+
+```python
+from evidently import Report
+from evidently.metrics import *
+from evidently.generators import ColumnMetricGenerator
+```
+
+## [​](#metric-generators) Metric generators
+
+**Example 1**. Apply the selected metric (`ValueDrift`) to all columns in the dataset.
+
+Copy
+
+```python
+report = Report([
+    ColumnMetricGenerator(ValueDrift)
+])
+
+my_eval = report.run(eval_data_1, eval_data_2)
+my_eval
+```
+
+**Example 2**. Apply the selected metric (`ValueDrift`) to the listed columns in the dataset. Use `metric_kwargs` to pass any applicable metric parameters.
+
+Copy
+
+```python
+report = Report([
+    ColumnMetricGenerator(ValueDrift, 
+                          columns=["EducationLevel", "Salary"],
+                          metric_kwargs={"method":"psi"}), # metric parameters
+])
+
+my_eval = report.run(eval_data_1, eval_data_2)
+my_eval
+```
+
+**Example 3**. Apply the selected metric (`ValueDrift`) only to the categorical (`cat`) columns in the dataset.
+
+Copy
+
+```python
+report = Report([
+    ColumnMetricGenerator(UniqueValueCount, 
+                          column_types='cat'),  #apply to categorical columns only 
+])
+
+my_eval = report.run(eval_data_1, eval_data_2)
+my_eval
+```
+
+Available:
+
+* `num` - numerical
+* `cat` - categorical
+* `all` - all
+
+## [​](#test-generators) Test generators
+
+You can use the same approach to generate Tests. Use `metric_kwargs` to pass test conditions.
+**Example.** Generate the same Test for all the columns in the dataset. It will use defaults if you do not specify the test condition.
+
+Copy
+
+```python
+from evidently.future.tests import *
+
+report = Report([
+    ColumnMetricGenerator(MinValue, 
+                          column_types='num',
+                          metric_kwargs={"tests":[gt(0)]}), 
+])
+
+my_eval = report.run(eval_data_1, eval_data_2)
+my_eval
+```
+
+This will apply the minimum value test to all numerical columns in the dataset and check that they are above 0.

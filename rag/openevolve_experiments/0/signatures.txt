@@ -1,0 +1,14 @@
+--- CorrectnessLLMEval ---
+(column_name: str, target_output: str, provider: str = 'openai', model: str = 'gpt-4o-mini', additional_columns: Optional[Dict[str, str]] = None, include_category: Optional[bool] = None, include_score: Optional[bool] = None, include_reasoning: Optional[bool] = None, uncertainty: Optional[evidently.llm.templates.Uncertainty] = None, alias: Optional[str] = None, tests: Optional[List[Union[ForwardRef('DescriptorTest'), ForwardRef('GenericTest')]]] = None)
+
+--- BERTScore ---
+(columns: List[str], model: str = 'bert-base-uncased', tfidf_weighted: bool = False, alias: Optional[str] = None, tests: Optional[List[Union[ForwardRef('DescriptorTest'), ForwardRef('GenericTest')]]] = None)
+
+--- SemanticSimilarity ---
+(columns: List[str], model: str = 'all-MiniLM-L6-v2', alias: Optional[str] = None, tests: Optional[List[Union[ForwardRef('DescriptorTest'), ForwardRef('GenericTest')]]] = None)
+
+--- ContextRelevance ---
+(input: str, contexts: str, method: str = 'semantic_similarity', method_params: Optional[Dict[str, object]] = None, aggregation_method: Optional[str] = None, aggregation_method_params: Optional[Dict[str, object]] = None, output_scores: bool = False, alias: Optional[str] = None, tests: Optional[List[Union[ForwardRef('DescriptorTest'), ForwardRef('GenericTest')]]] = None) -> None
+
+--- FaithfulnessLLMEval ---
+(column_name: str, context: str, provider: str = 'openai', model: str = 'gpt-4o-mini', additional_columns: Optional[Dict[str, str]] = None, include_category: Optional[bool] = None, include_score: Optional[bool] = None, include_reasoning: Optional[bool] = None, uncertainty: Optional[evidently.llm.templates.Uncertainty] = None, alias: Optional[str] = None, tests: Optional[List[Union[ForwardRef('DescriptorTest'), ForwardRef('GenericTest')]]] = None)

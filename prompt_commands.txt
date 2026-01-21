@@ -143,3 +143,241 @@ log_level: Logging verbosity (DEBUG, INFO, WARNING, ERROR, CRITICAL)
 
 (`config.yaml`, `evaluator.py`, `initial_program.py`)  it creates a python script that tries evaluator in initial program (or text)
 and run it to check if it raises no errors
+
+
+____
+
+@open-experiment
+
+Help me creating a new openevolve experiment in
+
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/0
+
+In order to optimize
+
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/0/initial_program.py
+
+To obtain the best RAG pipeline to retrieve info from docs in
+
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs
+
+To maximize Evidently metrics computed from ground truth
+
+/home/erick/repo/google_adk_chatbot/rag/docs/ground_truth/adk_docs_ground_truth_8.json
+
+The metrics used should be something similar to:
+
+from evidently.model_evaluation import (
+    RAGEvaluation,
+    CorrectnessLLMEval,
+    BERTScore,
+    SemanticSimilarity,
+    ContextRelevance,
+    FaithfulnessLLMEval,
+)
+
+eval = RAGEvaluation(
+    metrics=[
+        CorrectnessLLMEval(),
+        BERTScore(),
+        SemanticSimilarity(),
+        ContextRelevance(method="llm"),
+        FaithfulnessLLMEval(),
+    ]
+)
+
+results = eval.evaluate(
+    dataset=my_ground_truth_json,
+    llm=my_llm_client  # optional if metric needs LLM
+)
+
+
+But you need to adapt correctly the loading from json to evidently docs requirement as in example:
+
+synthetic_data = [
+
+    ["Why do flowers bloom in spring?",
+     "Plants require extra care during cold months. You should keep them indoors.",
+     "because of the rising temperatures"],
+
+    ["Why do we yawn when we see someone else yawn?",
+     "Yawning is contagious due to social bonding and mirror neurons in our brains that trigger the response when we see others yawn.",
+     "because it's a glitch in the matrix"],
+
+    ["How far is Saturn from Earth?",
+     "The distance between Earth and Saturn varies, but on average, Saturn is about 1.4 billion kilometers (886 million miles) away from Earth.",
+     "about 1.4 billion kilometers"],
+
+    ["Where do penguins live?",
+     "Penguins primarily live in the Southern Hemisphere, with most species found in Antarctica, as well as on islands and coastlines of South America, Africa, Australia, and New Zealand.",
+     "mostly in Antarctica and southern regions"],
+]
+
+columns = ["Question", "Context", "Response"]
+synthetic_df = pd.DataFrame(synthetic_data, columns=columns)
+
+
+LLM should try diverse:
+
+
+Hyperparameters like chunk-size/overlap, top-k
+chunking, including ad hoc laws to separate code chunks (learn from example in /home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/0/run_ingestion.py)
+splitters
+Retrieval (hybrid instead of similarity)
+
+____
+
+I've prompted
+@open-experiment
+
+Help me creating a new openevolve experiment in
+
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/0
+
+In order to optimize
+
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/0/initial_program.py
+
+To obtain the best RAG pipeline to retrieve info from docs in
+
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs
+
+To maximize Evidently metrics computed from ground truth
+
+/home/erick/repo/google_adk_chatbot/rag/docs/ground_truth/adk_docs_ground_truth_8.json
+
+The metrics used should be something similar to:
+
+from evidently.model_evaluation import (
+    RAGEvaluation,
+    CorrectnessLLMEval,
+    BERTScore,
+    SemanticSimilarity,
+    ContextRelevance,
+    FaithfulnessLLMEval,
+)
+
+eval = RAGEvaluation(
+    metrics=[
+        CorrectnessLLMEval(),
+        BERTScore(),
+        SemanticSimilarity(),
+        ContextRelevance(method="llm"),
+        FaithfulnessLLMEval(),
+    ]
+)
+
+results = eval.evaluate(
+    dataset=my_ground_truth_json,
+    llm=my_llm_client  # optional if metric needs LLM
+)
+
+
+But you need to adapt correctly the loading from json to evidently docs requirement as in example:
+
+synthetic_data = [
+
+    ["Why do flowers bloom in spring?",
+     "Plants require extra care during cold months. You should keep them indoors.",
+     "because of the rising temperatures"],
+
+    ["Why do we yawn when we see someone else yawn?",
+     "Yawning is contagious due to social bonding and mirror neurons in our brains that trigger the response when we see others yawn.",
+     "because it's a glitch in the matrix"],
+
+    ["How far is Saturn from Earth?",
+     "The distance between Earth and Saturn varies, but on average, Saturn is about 1.4 billion kilometers (886 million miles) away from Earth.",
+     "about 1.4 billion kilometers"],
+
+    ["Where do penguins live?",
+     "Penguins primarily live in the Southern Hemisphere, with most species found in Antarctica, as well as on islands and coastlines of South America, Africa, Australia, and New Zealand.",
+     "mostly in Antarctica and southern regions"],
+]
+
+columns = ["Question", "Context", "Response"]
+synthetic_df = pd.DataFrame(synthetic_data, columns=columns)
+
+
+LLM should try diverse:
+
+
+Hyperparameters like chunk-size/overlap, top-k
+chunking, including ad hoc laws to separate code chunks (learn from example in /home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/0/run_ingestion.py)
+splitters
+Retrieval (hybrid instead of similarity)
+
+
+And got very bad files, as you can see here:
+
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/0/config.yaml
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/0/evaluator.py
+
+(config does not have even system message, evaluator does not return a dictionary with combined_score, etc)
+
+Either the skills are not well described (or missing some good examples)
+
+Your tasks are:
+
+1- Learn from examples like
+
+/home/erick/repo/openevolve/examples/circle_packing_with_artifacts/config_phase_1.yaml
+/home/erick/repo/openevolve/examples/circle_packing_with_artifacts/config_phase_2.yaml
+/home/erick/repo/openevolve/examples/circle_packing_with_artifacts/evaluator.py
+
+
+/home/erick/repo/openevolve/examples/signal_processing/config.yaml
+/home/erick/repo/openevolve/examples/signal_processing/evaluator.py
+
+/home/erick/repo/openevolve/examples/llm_prompt_optimization/config.yaml
+/home/erick/repo/openevolve/examples/llm_prompt_optimization/evaluator.py
+
+2- Improve
+
+/home/erick/repo/google_adk_chatbot/.agent/skills/openevolve-experiment/SKILL.md
+
+With examples or templates to get better responses when calling the skill
+
+_____
+
+
+
+openevolve-run /home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/0/initial_program.py \
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/0/evaluator.py \
+--config /home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/0/config.yaml \
+--iterations 1
+
+__
+
+
+I think there are some errors in evidently signature in
+
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/0/evaluator.py
+
+Your tasks are:
+
+1- Study carefully docs in
+
+/home/erick/repo/google_adk_chatbot/rag/docs/evidently/RAG evals - Evidently AI - Documentation.pdf
+
+2- Fix code to compute correclty metrics in
+
+
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/0/evaluator.py
+
+____
+Try to evaluate initial program with evaluator using python in this environment:
+
+/home/erick/repo/google_adk_chatbot/venv
+
+
+____
+
+I've copied a more comprehensive evidently Documentation in
+
+/home/erick/repo/google_adk_chatbot/rag/docs/evidently
+
+please, study
+
+/home/erick/repo/google_adk_chatbot/rag/docs/evidently/metrics-preset_text_evals.md
+
+Before continuing the fixing

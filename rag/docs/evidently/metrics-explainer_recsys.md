@@ -1,0 +1,153 @@
+---
+url: https://docs.evidentlyai.com/metrics/explainer_recsys
+source: Evidently Documentation
+---
+
+The following metrics can be used for ranking, retrieval and recommender systems.
+
+## [​](#ranking) Ranking
+
+### [​](#recall) Recall
+
+**Evidently Metric**: `RecallTopK`.
+Recall at K reflects the ability of the recommender or ranking system to retrieve all relevant items within the top K results.
+**Implemented method:**
+
+* **Compute recall at K by user**. Compute the recall at K for each individual user (or query), by measuring the share of all relevant items in the dataset that appear in the top K results.
+
+Recall at K=Number of relevant items in KTotal number of relevant items\text{Recall at } K = \frac{\text{Number of relevant items in } K}{\text{Total number of relevant items}}Recall at K=Total number of relevant itemsNumber of relevant items in K​
+
+* **Compute overall recall**. Average the results across all users (queries) in the dataset.
+
+**Range**: 0 to 1.
+**Interpretation**: a higher recall at K indicates that the model can retrieve a higher proportion of relevant items, which is generally desirable.
+**Notes**: if the total number of relevant items is greater than K, it’s impossible to recall all of them within the top K results (making 100% recall impossible).
+
+### [​](#precision) Precision
+
+**Evidently Metric**: `PrecisionTopK`.
+Precision at K reflects the ability of the system to suggest items that are truly relevant to the users’ preferences or queries.
+**Implemented method:**
+
+* **Compute precision at K by user**. Compute the precision at K for each user (or query) by measuring the share of the relevant results within the top K.
+
+Precision at K=Number of relevant items in KTotal number of items in K\text{Precision at } K = \frac{\text{Number of relevant items in } K}{\text{Total number of items in }K}Precision at K=Total number of items in KNumber of relevant items in K​
+
+* **Compute overall precision**. Average the results across all users (queries) in the dataset.
+
+**Range**: 0 to 1.
+**Interpretation**: a higher precision at K indicates that a larger proportion of the top results are relevant, which is generally desirable.
+
+### [​](#f-beta) F Beta
+
+**Evidently Metric**: `FBetaTopK`.
+The F Beta score at K combines precision and recall into a single value, providing a balanced measure of a recommendation or ranking system’s performance.
+Fβ=(1+β2)×Precision at K×Recall at K(β2×Precision at K)+Recall at KF\_{\beta} = \frac{(1 + \beta^2) \times \text{Precision at K} \times \text{Recall at K}}{(\beta^2 \times \text{Precision at K}) + \text{Recall at K}}Fβ​=(β2×Precision at K)+Recall at K(1+β2)×Precision at K×Recall at K​
+`Beta` is a parameter that determines the weight assigned to recall relative to precision. `Beta` > 1 gives more weight to recall, while `beta` < 1 favors precision.
+If `Beta` = 1 (default), it is a traditional F1 score that provides a harmonic mean of precision and recall at K. It provides a balanced estimation, considering both false positives (items recommended that are not relevant) and false negatives (relevant items not recommended).
+**Range**: 0 to 1.
+**Interpretation**: Higher F Beta at K values indicate better overall performance.
+
+### [​](#mean-average-precision-map) Mean average precision (MAP)
+
+**Evidently Metric**: `MAP`.
+MAP (Mean Average Precision) at K assesses the ability of the recommender or retrieval system to suggest relevant items in the top-K results, while placing more relevant items at the top.
+Compared to precision at K, MAP at K is rank-aware. It penalizes the system for placing relevant items lower in the list, even if the total number of relevant items at K is the same.
+**Implemented method:**
+
+* **Compute Average Precision (AP) at K by user**. The Average Precision at K is computed for each user (or query) as an average of precision values at each relevant item position within the top K. To do that, we sum up precision at all values of K when the item is relevant (e.g., Precision @1, Precision@2..), and divide it by the total number of relevant items in K.
+
+AP@K=1N∑k=1KPrecision(k)×rel(k)\text{AP@K} = \frac{1}{N} \sum\_{k=1}^{K} Precision(k) \times rel(k)AP@K=N1​∑k=1K​Precision(k)×rel(k)
+Where *N* is the total number of relevant items at K, and *rel(k)* is equal to 1 if the item is relevant, and is 0 otherwise.
+Example: if K = 10, and items in positions 1, 2, and 10 are relevant, the formula will look as:
+AP@10=Precision@1+Precision@2+Precision@103AP@10 = \frac{Precision@1+Precision@2+Precision@10}{3}AP@10=3Precision@1+Precision@2+Precision@10​
+
+* **Compute Mean Average Precision (MAP) at K**. Average the results across all users (or queries) in the dataset.
+
+MAP@K=1U∑u=1UAP@Ku\text{MAP@K} = \frac{1}{U} \sum\_{u=1}^{U} \text{AP@K}\_uMAP@K=U1​∑u=1U​AP@Ku​
+Where *U* is the total number of users or queries in the dataset, and *AP* is the average precision for a given list.
+**Range**: 0 to 1.
+**Interpretation**: Higher MAP at K values indicates a better ability of the system to place relevant items high in the list.
+
+### [​](#mean-average-recall-mar) Mean average recall (MAR)
+
+**Evidently Metric**: `MAR`.
+MAR (Mean Average Recall) at K assesses the ability of a recommendation system to retrieve all relevant items within the top-K results, averaged by all relevant positions.
+**Implemented method:**
+
+* **Compute the average recall at K by user**. Compute and average the recall at each relevant position within the top K for every user (or query). To do that, we sum up the recall at all values of K when the item is relevant (e.g. Recall @1, Recall@2..), and divide it by the total number of relevant recommendations in K.
+
+AR@K=1N∑k=1KRecall(k)×rel(k)\text{AR@K} = \frac{1}{N} \sum\_{k=1}^{K} Recall(k) \times rel(k)AR@K=N1​∑k=1K​Recall(k)×rel(k)
+Example: if K = 10, and items in positions 1, 2, and 10 are relevant, the formula will look as:
+AR@10=Recall@1+Recall@2+Recall@103\text{AR@10} = \frac{Recall@1+Recall@2+Recall@10}{3}AR@10=3Recall@1+Recall@2+Recall@10​
+
+* **Compute mean average recall at K**. Average the results across all users (or queries).
+
+MAR@K=1U∑u=1UAR@Ku\text{MAR@K} = \frac{1}{U} \sum\_{u=1}^{U} \text{AR@K}\_uMAR@K=U1​∑u=1U​AR@Ku​
+Where *U* is the total number of users or queries in the dataset, and *AR* is the average recall for a given list.
+**Range**: 0 to 1.
+**Interpretation**: Higher MAR at K values indicates a better ability of the system to retrieve relevant items across all users or queries.
+
+### [​](#normalized-discounted-cumulative-gain-ndcg) Normalized Discounted Cumulative Gain (NDCG)
+
+**Evidently Metric**: `NDCG`.
+NDCG (Normalized Discounted Cumulative Gain) at K reflects the ranking quality, comparing it to an ideal order where all relevant items for each user (or query) are placed at the top of the list.
+**Implemented method**:
+
+* **Provide the item relevance score**. You can assign a relevance score for each item in each top-K list for user or query. Depending on the model type, it can be a binary outcome (1 is relevant, 0 is not) or a score.
+* **Compute the discounted cumulative gain (DCG)** at K by the user or query. DCG at K measures the quality of the ranking (= total relevance) for a list of top-K items. We add a logarithmic discount to account for diminishing returns from each following item being lower on the list. To get the resulting DCG, you can compute a weighted sum of the relevance scores for all items from the top of the list to K with an applied discount.
+
+DCG@K=∑i=1Krelilog⁡2(i+1)\text{DCG@K} = \sum\_{i=1}^{K} \frac{rel\_i}{\log\_2(i + 1)}DCG@K=∑i=1K​log2​(i+1)reli​​
+Where *Rel(i)* is the relevance score of the item at rank *i*.
+
+* **Compute the normalized DCG (NDCG)**. To normalize the metric, we divide the resulting DCG by the ideal DCG (IDCG) at K. Ideal DCG at K represents the maximum achievable DCG when the items are perfectly ranked in descending order of relevance.
+
+NDCG@K=DCG@KIDCG@K\text{NDCG@K} = \frac{DCG@K}{IDCG@K}NDCG@K=IDCG@KDCG@K​
+This way, it is possible to compare NDCG values across different use cases. The resulting NDCG values for all users or queries are averaged to measure the overall performance of a model.
+**Range**: 0 to 1, where 1 indicates perfect ranking.
+**Interpretation**: Higher NDCG at K indicates a better ability of the system to place more relevant items higher up in the ranking.
+
+### [​](#hit-rate) Hit Rate
+
+**Evidently Metric**: `HitRate`.
+Hit Rate at K calculates the share of users or queries for which at least one relevant item is included in the K.
+**Implemented method**:
+
+* **Compute “hit” for each user**. For each user or query, we evaluate if any of the top-K recommended items is relevant. It is a binary metric equal to 1 if any relevant item is included in K, or 0 otherwise.
+* **Compute average hit rate**. The average of this metric is calculated across all users or queries.
+
+**Range**: 0 to 1, where 1 indicates that each user / query gets at least one relevant recommendation / retrieval.
+**Interpretation**: A higher Hit Rate indicates that a higher share of users / queries have relevant items in their lists.
+**Note**: the Hit Rate will typically increase for higher values of K (since there is a higher chance that a relevant item will be recommended in a longer list).
+
+### [​](#mean-reciprocal-rank-mrr) Mean Reciprocal Rank (MRR)
+
+**Evidently Metric**: `MRR`
+Mean Reciprocal Rank (MRR) measures the ranking quality considering the position of the first relevant item in the list.
+**Implemented method:**
+
+* For each user or query, identify the position of the **first relevant item** in the recommended list.
+* Calculate the **reciprocal rank**, taking the reciprocal of the position of the first relevant item for each user or query (i.e., 1/position).
+  Example: if the first relevant item is at the top of the list - the reciprocal rank is 1, if it is on the 2nd position - the reciprocal rank ½, if on the 3rd - ⅓, etc.
+* Calculate the **mean reciprocal rank** (MRR). Compute the average reciprocal rank across all users or queries.
+
+MRR=1U∑u=1U1ranki\text{MRR} = \frac{1}{U} \sum\_{u=1}^{U}\frac{1}{rank\_i}MRR=U1​∑u=1U​ranki​1​
+Where *U* is the total number of users or queries, and *rank(i)* is the rank of the first relevant item for user *u* in the top-K results.
+**Range**: 0 to 1, where 1 indicates that the first recommended item for every user is relevant.
+**Interpretation**: A higher MRR indicates that, on average, relevant items are positioned closer to the top of the recommended lists.
+**Note**: Only a single top relevant item is considered in this metric, disregarding the position and relevance of other items in the list.
+
+### [​](#score-distribution-entropy) Score Distribution (Entropy)
+
+**Evidently Metric**: `ScoreDistribution`
+This metric computes the predicted score entropy. It applies only when the `recommendations_type` is a score.
+**Implementation**:
+
+* Apply softmax transformation for top-K scores for all users.
+* Compute the KL divergence (relative entropy in [scipy](https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.entropy.html)).
+
+The visualization shows the distribution of the predicted scores at K (and all scores, if available).
+
+## [​](#recsys) RecSys
+
+These metrics are **coming soon** to the new Evidently API! Check the old docs for now.

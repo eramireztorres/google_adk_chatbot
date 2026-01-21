@@ -1,0 +1,146 @@
+---
+url: https://docs.evidentlyai.com/faq/migration
+source: Evidently Documentation
+---
+
+This guide explains the key changes introduced in Evidently 0.6 and above. It is meant for **existing users** who used earlier version of Evidently library prior to 2025.
+
+If you’re new to Evidently, skip this page and head directly to the Quickstart for [ML](/quickstart_ml) or [LLM](/quickstart_llm).
+
+## [​](#what-happened) What happened?
+
+Here is a summary of changes to the Evidently Python library.
+
+| Change | Date | Description |
+| --- | --- | --- |
+| **New API.** Version 0.6 | January 2025 | Evidently 0.6 brought an updated core API with a new Report object. You can learn more in [the blog](https://www.evidentlyai.com/blog/evidently-api-change).  * To use the new API, import components from `evidently.future`. For example:`from evidently.future import Report` |
+| **Transition period.** Versions 0.6 to 0.6.7 | - | During the transition period, both APIs co-existed in the library. For version between 0.6 and 0.6.7, you can choose either option:  * Use the new API importing it as `from evidently.future.` * Use the legacy API, as documented in [old docs](https://docs-old.evidentlyai.com/). |
+| **Breaking change.** Version 0.7. | April 2025 | Evidently 0.7 release makes the new API the default.  * You can import it as `from evidently import Report`. * This is coupled with updates to the [Evidently platform](cloud_v2). |
+
+If you still need the old API, pin your Evidently version to `0.6.7` or earlier.
+
+## [​](#what-changed) What changed?
+
+These updates bring various improvements and changes to the core library. You can also learn more in the [release blog](https://www.evidentlyai.com/blog/evidently-api-change).
+
+### [​](#data-definition) Data Definition
+
+We replaced `column_mapping` with `data_definition`. Now, you also need to explicitly create an Evidently `Dataset` object instead of just passing a dataframe when running a Report. Each `Dataset` object has an associated `DataDefinition`.
+While similar to column mapping, this new structure lets you cleanly map input columns based on their **type** (e.g., categorical, numerical, datetime, text) and **role** (e.g., target, prediction, timestamp). A column can have both a type and role.
+You can also now map **multiple targets and predictions** inside the same table: e.g., if you deal with multiple regression or have several classification results in one table.
+Automated column type/role mapping is still available. Additionally, new mappings for LLM use cases, like RAG, will be supported.
+[## Data Definition
+
+Docs on mapping the input data.](/docs/library/data_definition)
+
+### [​](#descriptors) Descriptors
+
+Descriptors provide row-level text evaluations, ranging from basic checks (e.g., text length) to LLM-based evals (e.g., checking for contradictions). With the increasing focus on LLM-related metrics, we’ve updated the text descriptors API to make it more logical and easier to use.
+Descriptor computation is now split into **two steps**:
+**1. Compute Descriptors**. Add them to the source table containing inputs and outputs. You can do this together with data definition. For example:
+
+Copy
+
+```python
+eval_data = Dataset.from_pandas(
+    pd.DataFrame(df),
+    data_definition=DataDefinition(
+        text_columns=["question", "answer"]),
+    descriptors=[
+        Sentiment("answer", alias="Sentiment"),
+        TextLength("answer", alias="Length"),
+        IncludesWords("answer", words_list=['sorry', 'apologize'], alias="Denials"),
+    ]
+)
+```
+
+**2. Aggregate results or run conditional checks**. Use these descriptors like any other dataset column when creating a Report. For example, here is how you summarize all descriptors and check that the text length is under 100 symbols.
+
+Copy
+
+```python
+report = Report([
+    TextEvals(),
+    MaxValue(column="Length", tests=[lt(100)]),
+])
+```
+
+This decoupling means you can reuse descriptor outputs for multiple tests or aggregations without recomputation. It’s especially useful for LLM evaluations.
+[## Descriptors
+
+Docs on adding descriptors.](/docs/library/descriptors)
+
+### [​](#new-reports-api) New Reports API
+
+As you may have noticed in the example above, we made the changes to the core Report API. Here is how generating a Report with data summary preset for a single dataset works now:
+
+Copy
+
+```python
+eval_data = Dataset.from_pandas(
+    pd.DataFrame(source_df),
+    data_definition=DataDefinition()
+)
+
+report = Report([
+    DataSummaryPreset()
+])
+
+my_eval = report.run(eval_data, None)
+```
+
+Key changes:
+
+* The Report object now defines the configuration (e.g., metrics to include).
+* Running a Report returns a separate result object.
+
+[## Reports
+
+How to generate Reports.](/docs/library/report)
+Additional improvement: you can also now use “Group by” to compute metrics for specific segments.
+
+### [​](#test-suites-joined-with-reports) Test Suites joined with Reports
+
+Most importantly, Reports and Tests are now unified. Previously, these were separate:
+
+* Reports provided an overview of metrics (e.g., distribution summaries, statistics).
+* Tests verify pass/fail conditions (e.g., check for missing data or LLM quality thresholds).
+
+Now, the Test Suite mode is an optional extension of a Report. If you choose to enable Tests, their results appear as a separate tab in the same HTML file. This eliminated duplication and the need to switch between separate files or Reports.
+For example, here is how you add a Test on max length that will appear in the same Report as all data / column statistics.
+
+Copy
+
+```python
+report = Report([
+     DataSummaryPreset(),
+     MaxValue(column="Length", tests=[lt(100)]),
+])
+```
+
+You can still use auto-generated Test conditions based on your reference dataset or define your own expectations.
+[## Tests
+
+How to add Tests with conditions.](/docs/library/tests)
+
+### [​](#metric-redesign) Metric redesign
+
+The Metric object has been simplified:
+
+* Metrics now produce a single computation result with a fixed structure.
+* Some visualization types can be specified directly as parameters to the Metric.
+
+This redesign significantly improves JSON result parsing and UI integration, since each Metric has a single or two results only.
+You can check the list of new Metrics here:
+[## Metrics
+
+All available Metrics.](/metrics/all-metrics)
+To get a pre-built combination of multiple checks at once, you can still use Presets.
+
+### [​](#simplified-dashboard-api) Simplified Dashboard API
+
+With the redesigned Metrics, the Dashboard API is now much, much simpler. You can create new panels and point to specific Metric results with a strictly fixed set of options.
+[## Dashboard
+
+How to add Dashboard panels.](/docs/platform/dashboard_add_panels)
+Additional improvement: custom metrics with custom renders are now viewable in the UI, which was not previously supported.
