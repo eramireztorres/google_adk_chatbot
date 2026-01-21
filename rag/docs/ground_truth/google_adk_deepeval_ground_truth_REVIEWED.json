@@ -1,0 +1,777 @@
+[
+  {
+    "input": "How does ADK handle automatic delegation between a root agent and its sub-agents?",
+    "expected_output": "ADK enables automatic delegation (Auto Flow) by utilizing the 'sub_agents' list and their respective 'description' fields. When a root agent receives a query, the LLM evaluates its own instructions alongside the descriptions of available sub-agents. If the LLM determines the query aligns better with a sub-agent's described capability, it automatically transfers control to that sub-agent for that conversational turn.",
+    "context": [
+      "By providing the sub_agents list, ADK enables automatic delegation. When the root agent receives a user query, its LLM considers not only its own instructions and tools but also the description of each sub-agent."
+    ]
+  },
+  {
+    "input": "Write a Python script to define a state-aware tool in ADK that accesses the user's preferred temperature unit from the session state.",
+    "expected_output": "from google.adk.tools import ToolContext\n\ndef save_preferences(preferences: str, tool_context: ToolContext) -> dict:\n    # Persist state for later turns (no prefix = session scope)\n    tool_context.state[\"user_preferences\"] = preferences\n    return {\"status\": \"saved\", \"preferences\": preferences}",
+    "context": [
+      "Tools can accept a ToolContext object (automatically provided by ADK if declared as the last argument). This object gives direct access to the session state via tool_context.state."
+    ]
+  },
+  {
+    "input": "What is the purpose of the 'before_model_callback' and how can it be used as a guardrail?",
+    "expected_output": "The 'before_model_callback' is a function executed just before the agent sends a request to the LLM. It serves as a guardrail by allowing developers to inspect the user input and return a predefined LlmResponse if certain criteria (like blocked keywords) are met, which skips the LLM call entirely to ensure safety.",
+    "context": [
+      "The before_model_callback is particularly useful for input safety... Inspect the request, modify it if necessary, or block it entirely based on predefined rules."
+    ]
+  },
+  {
+    "input": "Explain the role of the 'Runner' and 'SessionService' in an ADK application.",
+    "expected_output": "The SessionService is responsible for managing conversation history and state persistence across users and sessions. The Runner is the orchestration engine that takes user input, routes it to the appropriate agent, manages LLM and tool calls, and handles session updates by emitting a stream of immutable Events that carry state changes (state_delta).",
+    "context": [
+      "SessionService: Responsible for managing conversation history and state... Runner: The engine that orchestrates the interaction flow. It takes user input, routes it to the appropriate agent, manages calls to the LLM and tools."
+    ]
+  },
+  {
+    "input": "How do you implement a tool argument guardrail using Python in ADK?",
+    "expected_output": "You implement a tool argument guardrail using the 'before_tool_callback'. This function accepts the tool object, the arguments (dict), and the ToolContext. If the function returns a dictionary, ADK uses that dictionary as the tool's result and skips the actual tool execution. Returning None allows the tool to proceed.",
+    "context": [
+      "The before_tool_callback... is useful for validating the arguments the LLM wants to pass to the tool... If you return a dictionary, ADK treats this dictionary as the result of the tool call, completely skipping the execution of the original tool function."
+    ]
+  },
+  {
+    "input": "What is the ADK Visual Builder and what code format does it generate?",
+    "expected_output": "The ADK Visual Builder is a web-based graphical interface for designing and testing agents. It generates code in the 'Agent Config' format, typically consisting of .yaml files for agent configurations and Python files for custom tools.",
+    "context": [
+      "The ADK Visual Builder is a web-based tool that provides a visual workflow design environment... The Visual Builder tool generates code in the Agent Config format, using .yaml configuration files for agents and Python code for custom tools."
+    ]
+  },
+  {
+    "input": "How does the Firecrawl MCP Server benefit an ADK agent's research capabilities?",
+    "expected_output": "The Firecrawl MCP Server allows an ADK agent to crawl any website and convert content into clean, structured markdown. Key features include agent-based web research (searching and scraping full pages), structured data extraction (pulling specific info like prices via LLM), and large-scale ingestion for RAG pipelines using batch scrape and crawl tools.",
+    "context": [
+      "The Firecrawl MCP Server connects your ADK agent to the Firecrawl API, a service that can crawl any website and convert its content into clean, structured markdown.",
+      "Deploy an agent that can take a topic, use the search tool to find relevant URLs, and then use the scrape tool to extract the full content.",
+      "Use the extract tool to pull specific, structured information... powered by LLM extraction."
+    ]
+  },
+  {
+    "input": "Provide a Python example of connecting an ADK agent to a Remote Firecrawl MCP Server.",
+    "expected_output": "from google.adk.agents import Agent\nfrom google.adk.tools.mcp_tool import McpToolset\nfrom google.adk.tools.mcp_tool.mcp_session_manager import SseConnectionParams\n\n# Remote MCP endpoint (replace with Firecrawl's MCP SSE endpoint from Firecrawl docs)\nFIRECRAWL_MCP_ENDPOINT = \"https://<firecrawl-mcp-host>/sse\"\nFIRECRAWL_API_KEY = \"YOUR_FIRECRAWL_API_KEY\"\n\nroot_agent = Agent(\n    model=\"gemini-2.5-pro\",\n    name=\"firecrawl_agent\",\n    instruction=\"Use the Firecrawl MCP tools to crawl pages and extract structured data.\",\n    tools=[\n        McpToolset(\n            connection_params=SseConnectionParams(\n                url=FIRECRAWL_MCP_ENDPOINT,\n                headers={\"Authorization\": f\"Bearer {FIRECRAWL_API_KEY}\"},\n                timeout=300,\n            )\n        )\n    ],\n)",
+    "context": [
+      "connection_params=StreamableHTTPServerParams(url=f\"https://mcp.firecrawl.dev/{FIRECRAWL_API_KEY}/v2/mcp\")"
+    ]
+  },
+  {
+    "input": "What specific tools does the Tavily MCP Server provide to an ADK agent?",
+    "expected_output": "Tavily provides four main tools: 1) `tavily-search` for real-time web queries; 2) `tavily-extract` for structured data from single or batch URLs; 3) `tavily-map` for traversing websites and generating site maps; and 4) `tavily-crawl` for parallel exploration and discovery.",
+    "context": [
+      "tavily-search: Execute a search query to find relevant information across the web.",
+      "tavily-extract: Extract structured data from any web page.",
+      "tavily-map: Traverses websites like a graph... to generate comprehensive site maps.",
+      "tavily-crawl: Traversal tool that can explore hundreds of paths in parallel."
+    ]
+  },
+  {
+    "input": "Explain the use cases for integrating Hugging Face with an ADK agent.",
+    "expected_output": "Integrating Hugging Face via MCP allows an agent to: 1) Discover AI/ML assets like models, datasets, and research papers; 2) Build multi-step workflows, such as transcribing audio and then summarizing it; and 3) Find Gradio AI applications for specific tasks like background removal.",
+    "context": [
+      "Discover AI/ML Assets: Search and filter the Hub for models, datasets, and papers.",
+      "Build Multi-Step Workflows: Chain tools together, such as transcribing audio with one tool and then summarizing the resulting text.",
+      "Find AI Applications: Search for Gradio Spaces that can perform a specific task."
+    ]
+  },
+  {
+    "input": "How can the GitHub MCP Server be configured for read-only mode in an ADK agent?",
+    "expected_output": "Read-only mode for the GitHub MCP Server is enabled by setting the `X-MCP-Readonly` header to 'true' in the `StreamableHTTPServerParams`. If the header is set to values like 'false', 'f', 'no', '0', or 'off', it is interpreted as false.",
+    "context": [
+      "X-MCP-Readonly: Enables only 'read' tools.",
+      "If this header is empty, 'false', 'f', 'no', 'n', '0', or 'off' (ignoring whitespace and case), it will be interpreted as false. All other values are interpreted as true."
+    ]
+  },
+  {
+    "input": "Write the Python code to set up a Local Notion MCP Server using npx.",
+    "expected_output": "from google.adk.agents import Agent\nfrom google.adk.tools.mcp_tool import McpToolset\nfrom google.adk.tools.mcp_tool.mcp_session_manager import StdioConnectionParams\nfrom mcp import StdioServerParameters\n\nNOTION_API_KEY = \"YOUR_NOTION_API_KEY\"\n\nroot_agent = Agent(\n    model=\"gemini-2.5-pro\",\n    name=\"notion_agent\",\n    instruction=\"Help users manage their Notion workspace.\",\n    tools=[\n        McpToolset(\n            connection_params=StdioConnectionParams(\n                server_params=StdioServerParameters(\n                    command=\"npx\",\n                    args=[\"-y\", \"@notionhq/notion-mcp-server\"],\n                    env={\"NOTION_API_KEY\": NOTION_API_KEY},\n                ),\n                timeout=300,\n            )\n        )\n    ],\n)",
+    "context": [
+      "command=\"npx\", args=[\"-y\", \"@notionhq/notion-mcp-server\"], env={\"NOTION_TOKEN\": NOTION_TOKEN}"
+    ]
+  },
+  {
+    "input": "Write a Python snippet to connect an ADK agent to a Remote Firecrawl MCP Server.",
+    "expected_output": "from google.adk.agents import Agent\nfrom google.adk.tools.mcp_tool import McpToolset\nfrom google.adk.tools.mcp_tool.mcp_session_manager import SseConnectionParams\n\n# Remote MCP endpoint (replace with Firecrawl's MCP SSE endpoint from Firecrawl docs)\nFIRECRAWL_MCP_ENDPOINT = \"https://<firecrawl-mcp-host>/sse\"\nFIRECRAWL_API_KEY = \"YOUR_FIRECRAWL_API_KEY\"\n\nroot_agent = Agent(\n    model=\"gemini-2.5-pro\",\n    name=\"firecrawl_agent\",\n    instruction=\"Use the Firecrawl MCP tools to crawl pages and extract structured data.\",\n    tools=[\n        McpToolset(\n            connection_params=SseConnectionParams(\n                url=FIRECRAWL_MCP_ENDPOINT,\n                headers={\"Authorization\": f\"Bearer {FIRECRAWL_API_KEY}\"},\n                timeout=300,\n            )\n        )\n    ],\n)",
+    "context": [
+      "The Firecrawl MCP Server connects your ADK agent to the Firecrawl API... Use StreamableHTTPServerParams to connect to the remote server URL: https://mcp.firecrawl.dev/{FIRECRAWL_API_KEY}/v2/mcp."
+    ]
+  },
+  {
+    "input": "What are the four primary web intelligence tools provided by the Tavily MCP Server?",
+    "expected_output": "The Tavily MCP Server provides: 1) 'tavily-search' for real-time web queries; 2) 'tavily-extract' for structured data from single or batch URLs; 3) 'tavily-map' for traversing websites like a graph to generate site maps; and 4) 'tavily-crawl' for parallel exploration and discovery.",
+    "context": [
+      "tavily-search: Execute a search query... tavily-extract: Extract structured data... tavily-map: Traverses websites like a graph... tavily-crawl: Traversal tool that can explore hundreds of paths in parallel."
+    ]
+  },
+  {
+    "input": "How do you implement read-only mode for a GitHub MCP integration in ADK?",
+    "expected_output": "Read-only mode is enabled by setting the 'X-MCP-Readonly' header to 'true' in the 'StreamableHTTPServerParams'. If this header is empty or set to values like 'false', 'no', or '0', it is interpreted as false.",
+    "context": [
+      "X-MCP-Readonly: Enables only 'read' tools. If this header is empty, 'false', 'f', 'no', 'n', '0', or 'off'... it will be interpreted as false. All other values are interpreted as true."
+    ]
+  },
+  {
+    "input": "Explain how AgentQL differs from traditional web scrapers like XPath or CSS selectors.",
+    "expected_output": "AgentQL is a semantic extraction engine that identifies web elements based on their meaning rather than their technical position in the DOM. This makes queries 'self-healing' and resilient to website layout changes, as it uses natural language descriptions to find data instead of fragile CSS or XPath selectors.",
+    "context": [
+      "AgentQL is a semantic extraction engine that queries web elements based on their meaning rather than their CSS or XPath selectors... allows agents to retrieve specific data points... using natural language definitions."
+    ]
+  },
+  {
+    "input": "Provide the Python code for an ADK tool using AgentQL to extract web data.",
+    "expected_output": "ADK doesn't currently have an official \"AgentQL\" third‑party tools page in the ADK docs index.\nIf AgentQL provides an MCP server (local via stdio or remote via SSE), you can connect to it exactly like any other MCP toolset.\n\nExample pattern for a **local** MCP server started with `npx` (replace command/args/env according to AgentQL's MCP server docs):\n\nfrom google.adk.agents import Agent\nfrom google.adk.tools.mcp_tool import McpToolset\nfrom google.adk.tools.mcp_tool.mcp_session_manager import StdioConnectionParams\nfrom mcp import StdioServerParameters\n\nAGENTQL_API_KEY = \"YOUR_API_KEY\"\n\nagentql_agent = Agent(\n    model=\"gemini-2.5-pro\",\n    name=\"agentql_agent\",\n    tools=[\n        McpToolset(\n            connection_params=StdioConnectionParams(\n                server_params=StdioServerParameters(\n                    command=\"npx\",\n                    args=[\"-y\", \"<agentql-mcp-package>\"],\n                    env={\"AGENTQL_API_KEY\": AGENTQL_API_KEY},\n                ),\n                timeout=300,\n            ),\n        )\n    ],\n)",
+    "context": [
+      "Usage with agent Local MCP Server... command='npx', args=['-y', 'agentql-mcp'], env={'AGENTQL_API_KEY': AGENTQL_API_KEY}."
+    ]
+  },
+  {
+    "input": "What is the purpose of AG-UI and how does it integrate with ADK and CopilotKit?",
+    "expected_output": "AG-UI is an open, event-based protocol that standardizes how AI agents connect to user-facing applications. In a typical stack, ADK runs the agent's logic and tool orchestration (the 'brain'), CopilotKit provides pre-built UI components like chat bubbles, and AG-UI acts as the communication bridge (the 'walkie-talkie') between them.",
+    "context": [
+      "AG-UI is an open, lightweight, event-based protocol that standardizes how AI agents connect to user-facing applications.",
+      "ADK runs the agent's 'brain' and tool orchestration, while AG-UI provides a communication channel to UI components."
+    ]
+  },
+  {
+    "input": "How can session state be synchronized between an ADK agent and a frontend UI using AG-UI?",
+    "expected_output": "State synchronization is achieved using the 'useCoAgent' hook in the frontend (e.g., in a React app) over the AG-UI protocol. This allows the agent to be aware of changes made by the user, and the UI to react to state updates from the agent in real-time, enabling a fluid user experience.",
+    "context": [
+      "ADK agents can be stateful, and synchronizing that state between your agents and your UIs enables powerful and fluid user experiences.",
+      "const { state, setState } = useCoAgent<AgentState>({ name: 'my_agent', ... })."
+    ]
+  },
+  {
+    "input": "What are the primary capabilities of the Browserbase MCP Server for an ADK agent?",
+    "expected_output": "Browserbase enables cloud browser automation, allowing an agent to interact with web pages (navigate, click, fill forms), take screenshots, and extract clean text content using atomic precision with tools like 'browserbase_stagehand_act' and 'browserbase_screenshot'.",
+    "context": [
+      "This server provides cloud browser automation capabilities using Browserbase and Stagehand. It enables your ADK agent to interact with web pages, take screenshots, extract information, and perform automated actions."
+    ]
+  },
+  {
+    "input": "Describe the 'Pro Mode' features of the Bright Data MCP server.",
+    "expected_output": "Bright Data's 'Pro Mode' (enabled via PRO_MODE=true) provides access to over 60 advanced tools, including full browser automation (scraping_browser.*) and structured data APIs for 120+ domains such as Amazon, LinkedIn, Google Maps, and various social media platforms.",
+    "context": [
+      "Enable Pro Mode by setting PRO_MODE=true... access to 60+ structured datasets from popular platforms including Amazon, LinkedIn... and browser automation."
+    ]
+  },
+  {
+    "input": "How can I turn a documented API from Apigee API hub into an ADK tool?",
+    "expected_output": "You can use the `APIHubToolset` class. First, generate an access token via `gcloud auth print-access-token`. Then, initialize `APIHubToolset` with the `access_token` and the `apihub_resource_name` (e.g., `projects/ID/locations/LOC/apis/API_ID`). If the API requires authentication, use `token_to_scheme_credential` to configure an API key or bearer token.",
+    "context": [
+      "ApiHubToolset lets you turn any documented API from Apigee API hub into a tool with a few lines of code.",
+      "If your API requires authentication, you must configure authentication for the tool."
+    ]
+  },
+  {
+    "input": "Write the Python code to set up an ADK agent with the BigQuery Agent Analytics Plugin.",
+    "expected_output": "from google.adk.apps import App\nfrom google.adk.plugins.bigquery_agent_analytics_plugin import BigQueryAgentAnalyticsPlugin\n\nbq_logging_plugin = BigQueryAgentAnalyticsPlugin(\n    project_id='your-project-id',\n    dataset_id='your-dataset-id',\n    table_id='agent_events' # Optional, defaults to agent_events\n)\n\napp = App(\n    name='my_bq_agent',\n    root_agent=root_agent,\n    plugins=[bq_logging_plugin]\n)",
+    "context": [
+      "You use the BigQuery Analytics Plugin by configuring and registering it with your ADK agent's App object.",
+      "app = App(name=\"my_bq_agent\", root_agent=root_agent, plugins=[bq_logging_plugin])"
+    ]
+  },
+  {
+    "input": "What IAM roles are required for an agent to use the Application Integration Toolset?",
+    "expected_output": "The principal (user or service account) requires the following three roles: 1) roles/integrations.integrationEditor, 2) roles/connectors.invoker, and 3) roles/secretmanager.secretAccessor. Note: Avoid using integrationInvoker with Agent Engine as it may cause 403 errors.",
+    "context": [
+      "To get the permissions that you need... you must have the following IAM roles: roles/integrations.integrationEditor, roles/connectors.invoker, roles/secretmanager.secretAccessor.",
+      "When using Agent Engine (AE) for deployment, don't use roles/integrations.integrationInvoker... Use roles/integrations.integrationEditor instead."
+    ]
+  },
+  {
+    "input": "Explain how persistence works in the Agent Engine Code Execution tool.",
+    "expected_output": "The Agent Engine Code Execution tool uses sandboxed environments that persist across multiple requests within an ADK workflow session. This means variables, imported modules, and files (up to 100MB) stay in the environment. You do not need to re-initialize variables or re-import libraries for subsequent tool calls in the same session.",
+    "context": [
+      "The Code Execution tool allows code and data to persist over multiple requests, enabling complex, multi-step coding tasks.",
+      "After execution, the sandbox remains active for subsequent tool calls within the same session, preserving variables, imported modules, and file state."
+    ]
+  },
+  {
+    "input": "Provide a BigQuery SQL query to analyze the average token usage of an ADK agent from the logged analytics data.",
+    "expected_output": "SELECT AVG(CAST(REGEXP_EXTRACT(content, r'Token Usage:.*total: ([0-9]+)') AS INT64)) as avg_tokens FROM `your-project.your-dataset.agent_events` WHERE event_type = 'LLM_RESPONSE';",
+    "context": [
+      "The content column contains a formatted string specific to the event_type.",
+      "Token usage analysis query example: SELECT AVG(CAST(REGEXP_EXTRACT(content, r\"Token Usage:.*total: ([0-9]+)\") AS INT64)) as avg_tokens..."
+    ]
+  },
+  {
+    "input": "What is the 'Computer Use' toolset and what software dependencies are required to use it?",
+    "expected_output": "The Computer Use Toolset allows an agent to operate a computer UI (like a browser) using a specific Gemini model and Playwright. Dependencies include: termcolor (3.1.0), playwright (1.52.0), browserbase (1.3.0), and rich. You must also run 'playwright install-deps chromium' and 'playwright install chromium'.",
+    "context": [
+      "The Computer Use Toolset allows an agent to operate a user interface of a computer... uses a specific Gemini model and the Playwright testing tool.",
+      "Setup requirements: pip install termcolor==3.1.0 playwright==1.52.0 browserbase==1.3.0 rich."
+    ]
+  },
+  {
+    "input": "How can I securely bind tool inputs to OIDC tokens in the MCP Toolbox for Databases?",
+    "expected_output": "You can use the 'Authenticated Parameters' feature of the MCP Toolbox. This feature automatically binds tool inputs to values from OIDC tokens, allowing you to run sensitive database queries without risk of leaking data through the prompt.",
+    "context": [
+      "Authenticated Parameters: bind tool inputs to values from OIDC tokens automatically, making it easy to run sensitive queries without potentially leaking data."
+    ]
+  },
+  {
+    "input": "How can I make multiple ADK tool calls run in parallel to improve performance?",
+    "expected_output": "Starting in **ADK Python v1.10.0**, ADK will *attempt* to run multiple FunctionTool calls in parallel.\nTo benefit from this, your tool functions must be **asynchronous** (`async def`) and use `await` (so they don't block the event loop).\n\nExample: make tools async so ADK can schedule them concurrently:\n\nimport aiohttp\n\nasync def get_weather(city: str) -> dict:\n    async with aiohttp.ClientSession() as session:\n        async with session.get(f\"http://api.weather.com/{city}\") as response:\n            return await response.json()\n\nasync def get_fx_rate(pair: str) -> dict:\n    async with aiohttp.ClientSession() as session:\n        async with session.get(f\"http://api.fx.com/{pair}\") as response:\n            return await response.json()\n\nImportant: if a tool is synchronous / blocking, it can prevent other tool calls from running in parallel.",
+    "context": [
+      "Enable parallel execution of your tool functions by defining them as asynchronous functions... using async def and await syntax.",
+      "Any ADK Tools that use synchronous processing in a set of tool function calls will block other tools from executing in parallel."
+    ]
+  },
+  {
+    "input": "Write a Python snippet for an ADK tool that updates a shared user preference in the session state.",
+    "expected_output": "from google.adk.tools import ToolContext, FunctionTool\n\ndef update_user_preference(preference: str, value: str, tool_context: ToolContext):\n    \"\"\"Updates a user-specific preference.\"\"\"\n    user_prefs_key = \"user:preferences\"\n    preferences = tool_context.state.get(user_prefs_key, {})\n    preferences[preference] = value\n    tool_context.state[user_prefs_key] = preferences\n    return {\"status\": \"success\", \"updated_preference\": preference}",
+    "context": [
+      "The tool_context.state attribute provides direct read and write access to the state associated with the current session.",
+      "Assign values directly (tool_context.state['new_key'] = 'new_value'). These changes are recorded in the state_delta."
+    ]
+  },
+  {
+    "input": "What is the difference between an 'Agent-as-a-Tool' and a 'Sub-agent' in ADK?",
+    "expected_output": "The primary difference is control flow. In 'Agent-as-a-Tool', the tool agent's response is passed back to the parent agent, which summarizes it for the user and retains control of the conversation. In a 'Sub-agent' relationship, the responsibility for the conversation is completely transferred to the sub-agent, and all subsequent user inputs are handled by that sub-agent.",
+    "context": [
+      "Agent-as-a-Tool: Agent B's answer is passed back to Agent A, which then summarizes the answer... Agent A retains control.",
+      "Sub-agent: the responsibility of answering the user is completely transferred to Agent B. Agent A is effectively out of the loop."
+    ]
+  },
+  {
+    "input": "Explain the 'Long Running Function Tool' and the role of the agent client in its execution.",
+    "expected_output": "A Long Running Function Tool starts a task that requires significant processing time without blocking the agent. Once invoked, the runner pauses the agent. The agent client is then responsible for querying the progress of the operation and sending an intermediate or final FunctionResponse back to the agent to continue or finalize the workflow.",
+    "context": [
+      "Once a long running function tool is invoked the agent runner pauses the agent run and lets the agent client to decide whether to continue or wait.",
+      "Agent client can query the progress of the long-running operation and send back an intermediate or final response."
+    ]
+  },
+  {
+    "input": "How do you implement a simple Boolean confirmation for a sensitive tool like 'reimburse'?",
+    "expected_output": "You can implement a Boolean confirmation by wrapping the function with the `FunctionTool` class and setting the `require_confirmation` parameter to `True`. Alternatively, you can pass a function to `require_confirmation` that returns a boolean based on logic (e.g., if the amount exceeds a certain threshold).",
+    "context": [
+      "Enable a confirmation step by wrapping it with the FunctionTool class and setting the require_confirmation parameter to True.",
+      "You can modify the behavior require_confirmation response by replacing its input value with a function that returns a boolean response."
+    ]
+  },
+  {
+    "input": "What is the primary benefit of using 'OpenAPIToolset' for REST API integration?",
+    "expected_output": "The primary benefit is the automatic generation of callable tools (`RestApiTool`) directly from an OpenAPI Specification (v3.x). This eliminates the need to manually define individual function tools for every API endpoint, as the toolset handles parsing, operation discovery, and schema generation dynamically.",
+    "context": [
+      "ADK simplifies interacting with external REST APIs by automatically generating callable tools directly from an OpenAPI Specification (v3.x).",
+      "Use OpenAPIToolset to instantly create agent tools (RestApiTool) from your existing API documentation."
+    ]
+  },
+  {
+    "input": "Describe the security considerations for storing tokens in session state.",
+    "expected_output": "Storing sensitive credentials like refresh tokens in session state can pose risks. While `InMemorySessionService` is transient and lower risk, for persistent storage you should encrypt token data before saving. The most recommended production approach is using a secure secret store (like Secret Manager) and only keeping short-lived access tokens or secure references in the session state.",
+    "context": [
+      "Storing sensitive credentials... directly in the session state might pose security risks depending on your session storage backend.",
+      "For production environments, storing sensitive credentials in a dedicated secret manager... is the most recommended approach."
+    ]
+  },
+  {
+    "input": "What are the limitations of using built-in tools like Google Search or Code Execution within an ADK agent?",
+    "expected_output": "Normally, each root or single agent supports only one built-in tool. However, ADK Python provides a workaround for GoogleSearchTool and VertexAiSearchTool by setting the 'bypass_multi_tools_limit=True' parameter. Built-in tools are generally not supported within sub-agents unless this workaround is applied at the root level.",
+    "context": [
+      "Currently, for each root agent or single agent, only one built-in tool is supported. No other tools of any type can be used in the same agent.",
+      "Built-in tools cannot be used within a sub-agent, with the exception of GoogleSearchTool and VertexAiSearchTool in ADK Python because of the workaround mentioned above."
+    ]
+  },
+  {
+    "input": "How does the GKE Code Executor ensure security and isolation for LLM-generated code?",
+    "expected_output": "The GkeCodeExecutor ensures security by leveraging the GKE Sandbox environment with gVisor for kernel-level workload isolation. It dynamically creates ephemeral, sandboxed Kubernetes Jobs where code is mounted via ConfigMaps. Each execution runs in its own isolated Pod, preventing state transfer between different code runs and allowing resource limits (CPU/Memory) to prevent abuse.",
+    "context": [
+      "The GKE Code Executor (GkeCodeExecutor) provides a secure and scalable method for running LLM-generated code by leveraging the GKE (Google Kubernetes Engine) Sandbox environment, which uses gVisor for workload isolation.",
+      "Each code execution runs in its own ephemeral Pod, to prevent state transfer between executions."
+    ]
+  },
+  {
+    "input": "Write a Python function for a streaming tool that monitors a stock price and yields updates.",
+    "expected_output": "import asyncio\nfrom typing import AsyncGenerator\n\nasync def monitor_stock_price(stock_symbol: str) -> AsyncGenerator[str, None]:\n    \"\"\"Monitors the price for a given stock symbol asynchronously.\"\"\"\n    while True:\n        # Mock logic to fetch price\n        price = 300 # Assume fetched price\n        yield f\"the price for {stock_symbol} is {price}\"\n        await asyncio.sleep(10)",
+    "context": [
+      "To define a streaming tool, you must adhere to the following: 1. Asynchronous Function: The tool must be an async Python function. 2. AsyncGenerator Return Type: The function must be typed to return an AsyncGenerator."
+    ]
+  },
+  {
+    "input": "Explain the difference between token-level streaming and Bidi-streaming (live) in ADK.",
+    "expected_output": "Token-level streaming is a one-way process where the model sends text word-by-word to create a typing effect, but the user must wait for completion before replying. Bidi-streaming (live) is a bidirectional, real-time communication mode where human and AI can speak, listen, and respond simultaneously. It supports interruptions and multimodal inputs (audio/video/text) for a natural, phone-like conversation.",
+    "context": [
+      "Token-level streaming is a one-way process where a language model generates a response... one token at a time... user sends their full prompt, the model processes it, and then the model begins to generate.",
+      "With bidi-streaming, or live, mode, you can provide end users with the experience of natural, human-like voice conversations, including the ability for the user to interrupt the agent's responses."
+    ]
+  },
+  {
+    "input": "Provide the Python code to configure an ADK streaming agent with a specific prebuilt voice named 'Aoede'.",
+    "expected_output": "from google.genai import types\nfrom google.adk.agents.run_config import RunConfig\n\nvoice_config = types.VoiceConfig(\n    prebuilt_voice_config=types.PrebuiltVoiceConfigDict(\n        voice_name='Aoede'\n    )\n)\nspeech_config = types.SpeechConfig(voice_config=voice_config)\nrun_config = RunConfig(speech_config=speech_config)\n\n# Used in runner.run_live(..., run_config=run_config)",
+    "context": [
+      "For example, if you want to set voice config, you can leverage speech_config.",
+      "voice_config = genai_types.VoiceConfig(prebuilt_voice_config=genai_types.PrebuiltVoiceConfigDict(voice_name='Aoede'))"
+    ]
+  },
+  {
+    "input": "What is the role of 'LiveRequestQueue' in the ADK Bidi-streaming architecture?",
+    "expected_output": "The LiveRequestQueue acts as a message queue that buffers and sequences incoming user messages—including text content, audio blobs, and control signals. It ensures that inputs are processed orderly by the agent during a live streaming session, providing a stable interface between the transport layer (like WebSockets) and the ADK runner.",
+    "context": [
+      "LiveRequestQueue: Message queue that buffers and sequences incoming user messages (text content, audio blobs, control signals) for orderly processing by the agent."
+    ]
+  },
+  {
+    "input": "In a Bidi-streaming app using WebSockets, how should the UI handle an 'interrupted' event from the agent?",
+    "expected_output": "When the UI receives an 'interrupted' event (where interrupted is true), it should immediately stop current audio playback by sending a command like '{ command: \"endOfAudio\" }' to the audio player worklet. This ensures a seamless experience where the agent stops speaking as soon as the user begins their turn.",
+    "context": [
+      "interrupted: Signals that the agent's response was interrupted (e.g., when the user starts speaking)... In the UI: Stops audio playback immediately by sending { command: \"endOfAudio\" } to the audio player worklet."
+    ]
+  },
+  {
+    "input": "How do prefixes like 'user:', 'app:', and 'temp:' affect state scope and persistence in ADK?",
+    "expected_output": "Prefixes define the visibility and lifespan of state data: 1) No prefix (Session State) is specific to the current session ID and persists if using a persistent service. 2) 'user:' (User State) is tied to the user_id and shared across all sessions for that user within the app. 3) 'app:' (App State) is global, shared across all users and sessions for that application. 4) 'temp:' (Temporary State) is scoped only to the current invocation (e.g., passing data between tool calls) and is never persisted.",
+    "context": [
+      "Prefixes on state keys define their scope and persistence behavior... 'user:' tied to the user_id, shared across all sessions... 'app:' tied to the app_name, shared across all users... 'temp:' specific to the current invocation."
+    ]
+  },
+  {
+    "input": "Write a Python LlmAgent definition that uses {key} templating to inject a user's name from the session state into its instructions.",
+    "expected_output": "from google.adk.agents import LlmAgent\n\n# The framework replaces {user:name} with the actual value from session.state\ngreeting_agent = LlmAgent(\n    name=\"PersonalizedGreeter\",\n    model=\"gemini-2.0-flash\",\n    instruction=\"Greet the user warmly. Their name is {user:name?}.\"\n)",
+    "context": [
+      "To inject a value from the session state, enclose the key of the desired state variable within curly braces: {key}.",
+      "To use a key that may or may not be present, you can include a question mark (?) after the key (e.g. {topic?})."
+    ]
+  },
+  {
+    "input": "Explain the 'Yield/Pause/Resume' cycle in the ADK Runtime event loop.",
+    "expected_output": "The ADK Runtime follows a specific cycle: 1) Execute: The agent logic runs based on current context. 2) Yield: When the agent needs to send a message or call a tool, it emits an Event and pauses immediately. 3) Process: The Runner receives the Event and uses configured Services to commit actions like state changes. 4) Resume: The agent resumes only after the Runner finishes committing, ensuring it can now see the updated state.",
+    "context": [
+      "The Agent... runs until it has something to report... then yields or emits an Event.",
+      "Only after the Runner has processed the event does the Agent's logic resume... now potentially seeing the effects of the changes committed."
+    ]
+  },
+  {
+    "input": "What is a 'dirty read' in the context of ADK session state, and what is its risk?",
+    "expected_output": "A 'dirty read' occurs when code running later in the same invocation (like a tool) reads a state change made earlier in that same invocation before it has been yielded and committed by the Runner. While this allows coordination between tools, the risk is that if the invocation fails before the event is yielded, that state change is never persisted and will be lost.",
+    "context": [
+      "Code running later within the same invocation... can often see the local, uncommitted changes. This is sometimes called a 'dirty read'.",
+      "If the invocation fails before the event carrying the state_delta is yielded and processed by the Runner, the uncommitted state change will be lost."
+    ]
+  },
+  {
+    "input": "How do you enable and use the 'Resume' feature for a stopped workflow in Python?",
+    "expected_output": "To enable Resume, set 'resumability_config=ResumabilityConfig(is_resumable=True)' in your App object. To resume a stopped workflow, send a request to the '/run_sse' endpoint including the 'invocation_id' of the interrupted process. The system uses logged Events to reinstate completed tasks and restart from the exact failure point.",
+    "context": [
+      "Enable the Resume function... by applying a Resumabiltiy configuration to the App object... resumability_config=ResumabilityConfig(is_resumable=True).",
+      "The system resumes the workflow by setting the completion state of each agent... and restarts the workflow from the partially completed state."
+    ]
+  },
+  {
+    "input": "What are the primary differences between Session/State and Memory in the ADK framework?",
+    "expected_output": "Session and State focus on the current interaction, tracking the chronological events and temporary data of a single, active conversation managed by a SessionService. Memory focuses on long-term knowledge spanning across multiple past conversations or external data sources, managed by a MemoryService that supports semantic search.",
+    "context": [
+      "Session & State: Focus on the current interaction – the history and data of the single, active conversation.",
+      "Memory: Focuses on the past and external information – a searchable archive potentially spanning across conversations."
+    ]
+  },
+  {
+    "input": "Provide the Python code to initialize a VertexAiSessionService with a specific Reasoning Engine.",
+    "expected_output": "from google.adk.sessions import VertexAiSessionService\n\nPROJECT_ID = \"my-project\"\nLOCATION = \"us-central1\"\n# Reasoning Engine ID serves as the app_name\nRE_APP_NAME = \"projects/my-project/locations/us-central1/reasoningEngines/12345\"\n\nsession_service = VertexAiSessionService(project=PROJECT_ID, location=LOCATION)\n# Use RE_APP_NAME when calling methods: session_service.create_session(app_name=RE_APP_NAME, ...)",
+    "context": [
+      "The app_name used with this service should be the Reasoning Engine ID or name.",
+      "session_service = VertexAiSessionService(project=PROJECT_ID, location=LOCATION)"
+    ]
+  },
+  {
+    "input": "How do ADK Plugins differ from standard Agent Callbacks in terms of scope and execution order?",
+    "expected_output": "ADK Plugins have a global scope; they are registered once on the Runner and apply to every agent, tool, and LLM call managed by that runner. Standard Callbacks are local to a specific agent or tool instance. In terms of execution, Plugins have precedence and always run before the corresponding object-level callbacks.",
+    "context": [
+      "While a typical Agent Callback is configured on a single agent... a Plugin is registered once on the Runner and its callbacks apply globally to every agent, tool, and LLM call managed by that runner.",
+      "Plugin callback functions have precedence over callbacks implemented at the object level... Plugin callbacks code is executed before any Agent, Model, or Tool objects callbacks."
+    ]
+  },
+  {
+    "input": "Write a Python implementation of a custom Plugin that short-circuits an LLM call if a cached response is found.",
+    "expected_output": "from google.adk.plugins.base_plugin import BasePlugin\nfrom google.adk.agents.callback_context import CallbackContext\nfrom google.adk.models.llm_request import LlmRequest\nfrom google.adk.models.llm_response import LlmResponse\nfrom typing import Optional\n\nclass SimpleCachePlugin(BasePlugin):\n    async def before_model_callback(\n        self, *, callback_context: CallbackContext, llm_request: LlmRequest\n    ) -> Optional[LlmResponse]:\n        # Mock cache check logic\n        if \"hello\" in llm_request.prompt:\n            return LlmResponse(text=\"This is a cached response.\")\n        return None",
+    "context": [
+      "To Intervene: Implement a hook and return a value. This approach short-circuits the workflow... skips any subsequent plugins and the original intended action, like a Model call.",
+      "A common use case is implementing before_model_callback to return a cached LlmResponse."
+    ]
+  },
+  {
+    "input": "What is the 'Reflect and Retry Tool Plugin' and how is it configured in an ADK App?",
+    "expected_output": "The Reflect and Retry Tool Plugin helps agents recover from tool errors by providing structured guidance for reflection and automatically retrying the request. It is configured by adding it to the 'plugins' list of the App object. You can set 'max_retries' (default 3) and 'throw_exception_if_retry_exceeded' (default True).",
+    "context": [
+      "This plugin intercepts tool failures, provides structured guidance to the AI model for reflection and correction, and retries the operation up to a configurable limit.",
+      "app = App(name=\"my_app\", root_agent=root_agent, plugins=[ReflectAndRetryToolPlugin(max_retries=3)])"
+    ]
+  },
+  {
+    "input": "Provide the Python code to integrate Google ADK with Weights & Biases Weave for observability.",
+    "expected_output": "from opentelemetry import trace\nfrom opentelemetry.sdk import trace as trace_sdk\nfrom opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter\nfrom opentelemetry.sdk.trace.export import SimpleSpanProcessor\n\nexporter = OTLPSpanExporter(\n    endpoint=\"https://trace.wandb.ai/otel/v1/traces\",\n    headers={\"Authorization\": f\"Basic {AUTH}\", \"project_id\": \"entity/project\"}\n)\ntracer_provider = trace_sdk.TracerProvider()\ntracer_provider.add_span_processor(SimpleSpanProcessor(exporter))\n# Critical: Set provider BEFORE importing/using ADK\ntrace.set_tracer_provider(tracer_provider)",
+    "context": [
+      "It's critical to set the global tracer provider before using any ADK components to ensure proper tracing.",
+      "trace.set_tracer_provider(tracer_provider)"
+    ]
+  },
+  {
+    "input": "How does AgentOps handle ADK's native OpenTelemetry tracing when initialized?",
+    "expected_output": "AgentOps intelligently patches ADK's internal tracer (typically 'gcp.vertex.agent') and replaces it with a NoOpTracer. This silences ADK's native telemetry to prevent duplicate traces and ensures AgentOps acts as the single authoritative source for observability data while still using ADK's internal extraction logic for span attributes.",
+    "context": [
+      "AgentOps detects ADK and intelligently patches ADK's internal OpenTelemetry tracer... It replaces it with a NoOpTracer, ensuring that ADK's own attempts to create telemetry spans are effectively silenced."
+    ]
+  },
+  {
+    "input": "How can I enable Cloud Trace for an agent being deployed to Agent Engine via the ADK CLI?",
+    "expected_output": "You can enable cloud tracing by adding the '--trace_to_cloud' flag to the 'adk deploy agent_engine' command. This ensures interactions are logged and visible in the Google Cloud Trace Explorer waterfall view.",
+    "context": [
+      "You can enable cloud tracing by adding --trace_to_cloud flag when deploying your agent using adk deploy agent_engine command."
+    ]
+  },
+  {
+    "input": "What is Monocle's default trace export destination and how can it be changed to the console?",
+    "expected_output": "By default, Monocle exports traces to local JSON files in the './monocle' directory. To change the export destination to the console for debugging, you must set the environment variable 'MONOCLE_EXPORTER' to 'console'.",
+    "context": [
+      "By default, Monocle exports traces to local JSON files... Set the environment variable: export MONOCLE_EXPORTER=\"console\"."
+    ]
+  },
+  {
+    "input": "Explain the difference between Phoenix and Arize AX in the context of ADK observability.",
+    "expected_output": "Phoenix is an open-source, self-hosted observability platform ideal for local debugging and internal infrastructure. Arize AX is the production-grade, managed version of the platform, offering real-time dashboards and alerts for large-scale monitoring. Both use OpenInference instrumentation to automatically capture ADK agent runs, tool calls, and model requests.",
+    "context": [
+      "Phoenix is an open-source, self-hosted observability platform...",
+      "Arize AX is a production-grade observability platform for monitoring, debugging..."
+    ]
+  },
+  {
+    "input": "What is the Model Context Protocol (MCP) and how does ADK utilize it?",
+    "expected_output": "The Model Context Protocol (MCP) is an open standard that simplifies how LLMs communicate with external applications and data sources. ADK utilizes MCP in two ways: 1) ADK agents can act as MCP clients to use tools from external servers, and 2) ADK can expose its own tools via an MCP server to be consumed by other MCP-compatible clients.",
+    "context": [
+      "The Model Context Protocol (MCP) is an open standard designed to standardize how Large Language Models (LLMs) like Gemini and Claude communicate with external applications... ADK helps you both use and consume MCP tools in your agents."
+    ]
+  },
+  {
+    "input": "Which databases are supported out-of-the-box by the MCP Toolbox for Databases?",
+    "expected_output": "The MCP Toolbox supports a wide range of data sources including Google Cloud services (BigQuery, AlloyDB, Spanner, Firestore, Bigtable), relational databases (PostgreSQL, MySQL, SQL Server, SQLite), NoSQL stores (MongoDB, Redis, Cassandra), and graph databases like Neo4j and Dgraph.",
+    "context": [
+      "MCP Toolbox provides out-of-the-box toolsets for the following databases... BigQuery, AlloyDB, Spanner... PostgreSQL, MySQL... MongoDB, Redis... Neo4j, Dgraph."
+    ]
+  },
+  {
+    "input": "Explain the difference between an 'LlmAgent' and 'workflow agents' like SequentialAgent.",
+    "expected_output": "An 'LlmAgent' is a fundamental worker unit that uses language models for complex reasoning and tasks. In contrast, 'workflow agents' such as SequentialAgent, ParallelAgent, and LoopAgent act as deterministic controllers that manage the execution of predefined pipelines or logic flows.",
+    "context": [
+      "Agent: The fundamental worker unit... Agents can use language models (LlmAgent) for complex reasoning, or act as deterministic controllers of the execution, which are called 'workflow agents' (SequentialAgent, ParallelAgent, LoopAgent)."
+    ]
+  },
+  {
+    "input": "Write the Python code to define a basic search agent using the built-in google_search tool.",
+    "expected_output": "from google.adk.agents import Agent\nfrom google.adk.tools import google_search\n\nroot_agent = Agent(\n   name=\"basic_search_agent\",\n   model=\"gemini-2.0-flash-live-001\",\n   description=\"Agent to answer questions using Google Search.\",\n   instruction=\"You are an expert researcher. You always stick to the facts.\",\n   tools=[google_search]\n)",
+    "context": [
+      "root_agent = Agent(name=\"basic_search_agent\", model=\"...\", description=\"Agent to answer questions using Google Search.\", instruction=\"...\", tools=[google_search])"
+    ]
+  },
+  {
+    "input": "How do you launch the ADK Developer UI from the terminal in a Python project?",
+    "expected_output": "To launch the Developer UI, you navigate to the parent directory of your agent folder and run the command `adk web`. This starts a local web server (usually at http://localhost:8000) with a chat interface and event inspection tools.",
+    "context": [
+      "Run the following command to launch the dev UI: adk web.",
+      "Run this command from the parent directory that contains your my_agent/ folder."
+    ]
+  },
+  {
+    "input": "What is the purpose of the 'adk run' command versus 'adk api_server'?",
+    "expected_output": "'adk run' starts an interactive command-line interface to chat with your agent directly in the terminal. 'adk api_server' creates a local FastAPI server, allowing you to test your agent via cURL requests or integrate it with other services before deployment.",
+    "context": [
+      "adk run: Run your agent using the adk run command-line tool.",
+      "adk api_server: enables you to create a local FastAPI server... enabling you to test local cURL requests before you deploy."
+    ]
+  },
+  {
+    "input": "Provide a Go code snippet to initialize a basic Gemini model for an ADK agent.",
+    "expected_output": "ctx := context.Background()\nmodel, err := gemini.NewModel(ctx, \"gemini-3-pro-preview\", &genai.ClientConfig{\n    APIKey: os.Getenv(\"GOOGLE_API_KEY\"),\n})\nif err != nil {\n    log.Fatalf(\"Failed to create model: %v\", err)\n}",
+    "context": [
+      "model, err := gemini.NewModel(ctx, \"gemini-3-pro-preview\", &genai.ClientConfig{ APIKey: os.Getenv(\"GOOGLE_API_KEY\"), })"
+    ]
+  },
+  {
+    "input": "What are ADK Events and why are fields like 'invocation_id' and 'author' important for debugging?",
+    "expected_output": "Events are immutable records representing significant occurrences in an agent's lifecycle. 'invocation_id' is critical because it correlates all events within a single user interaction, allowing developers to trace the complete path of a request. 'author' identifies the source (either 'user' or a specific agent name), which is essential for understanding delegation and identifying which component triggered a tool call or response.",
+    "context": [
+      "An Event in ADK is an immutable record representing a specific point in the agent's execution.",
+      "Use invocation_id to correlate all events within a single user interaction. Use event.id to reference specific, unique occurrences.",
+      "Who sent it? (event.author) ... 'user': Indicates input directly from the end-user. 'AgentName': Indicates output or action from a specific agent."
+    ]
+  },
+  {
+    "input": "How does ADK evaluate an agent's 'trajectory' and why is it preferred over simple pass/fail assertions?",
+    "expected_output": "Trajectory evaluation analyzes the sequence of steps (tools used, reasoning process) an agent takes to reach a solution. It is preferred over deterministic pass/fail assertions because LLM behavior is probabilistic. By comparing the actual trajectory against an 'expected_steps' ground truth, developers can identify inefficiencies or errors in the agent's decision-making process even if the final answer seems correct.",
+    "context": [
+      "Due to the probabilistic nature of models, deterministic 'pass/fail' assertions are often unsuitable... instead, we need qualitative evaluations of both the final output and the agent's trajectory.",
+      "The expected trajectory represents the ground truth -- the list of steps we anticipate the agent should take."
+    ]
+  },
+  {
+    "input": "Provide the Python configuration for a User Simulator in an ADK evaluation.",
+    "expected_output": "{\n  \"user_simulator_config\": {\n    \"model\": \"gemini-2.5-flash\",\n    \"model_configuration\": {\n      \"thinking_config\": {\n        \"include_thoughts\": true,\n        \"thinking_budget\": 10240\n      }\n    },\n    \"max_allowed_invocations\": 20\n  }\n}",
+    "context": [
+      "You can override the default user simulator configuration to change the model, internal model behavior, and the maximum number of user-agent interactions."
+    ]
+  },
+  {
+    "input": "Explain the 'safety_v1' evaluation criterion and its infrastructure requirements.",
+    "expected_output": "The 'safety_v1' criterion assesses agent responses for harmful content like hate speech or harassment. Unlike native metrics, it delegates evaluation to the Vertex AI General AI Eval SDK. It requires a Google Cloud Project with the 'GOOGLE_CLOUD_PROJECT' and 'GOOGLE_CLOUD_LOCATION' environment variables properly configured.",
+    "context": [
+      "This criterion assesses whether the agent's response contains any harmful content... safety_v1 delegates the evaluation to the Vertex AI General AI Eval SDK.",
+      "Using this criterion requires a Google Cloud Project. You must have GOOGLE_CLOUD_PROJECT and GOOGLE_CLOUD_LOCATION environment variables set."
+    ]
+  },
+  {
+    "input": "What is the recommended command for an automated deployment of an ADK agent to GKE?",
+    "expected_output": "The recommended command is 'adk deploy gke'. This automated path handles building the container image, pushing it to Artifact Registry, and applying the necessary Kubernetes manifest files to your cluster.",
+    "context": [
+      "Automated Deployment using adk deploy gke... syntax: adk deploy gke [OPTIONS].",
+      "How It Works: 1. Builds the container image. 2. Pushes the image to Artifact Registry. 3. Deploys the application to your GKE cluster."
+    ]
+  },
+  {
+    "input": "Write the 'gcloud' command to deploy an ADK agent to Cloud Run with unauthenticated access enabled.",
+    "expected_output": "gcloud run deploy capital-agent \\\n    --source . \\\n    --env-vars-file .env.yaml \\\n    --allow-unauthenticated",
+    "context": [
+      "To deploy your agent... with gcloud run deploy command through Cloud Run.",
+      "Options: --allow-unauthenticated: (Optional) enables unauthenticated access."
+    ]
+  },
+  {
+    "input": "How can I quickly prepare an existing ADK project for deployment to Vertex AI Agent Engine?",
+    "expected_output": "You can use the Agent Starter Pack (ASP) by running 'uvx agent-starter-pack enhance --adk -d agent_engine'. This command backs up your project and adds the specific configuration files and deployment artifacts required by the Agent Engine service.",
+    "context": [
+      "This approach uses the ASP tool to apply a project template... add deployment artifacts, and prepare your agent project for deployment.",
+      "Run the ASP enhance command: uvx agent-starter-pack enhance --adk -d agent_engine."
+    ]
+  },
+  {
+    "input": "Where should I submit a Pull Request if I find a bug in the ADK Python framework?",
+    "expected_output": "Bugs or feature contributions for the Python framework should be submitted as a Pull Request to the 'google/adk-python' repository on GitHub.",
+    "context": [
+      "Help fix bugs, implement new features or contribute code samples... Python Framework: Create a Pull Request in google/adk-python."
+    ]
+  },
+  {
+    "input": "Explain the difference between 'Before Agent' and 'Before Model' callbacks in ADK.",
+    "expected_output": "The 'Before Agent' callback runs once at the very beginning of an agent's entire process for a single request, before any internal logic or tool decisions are made. The 'Before Model' callback is more granular; it runs specifically before each individual request sent to the Large Language Model (LLM). An agent might trigger one 'Before Agent' callback but multiple 'Before Model' callbacks if the task requires several LLM turns.",
+    "context": [
+      "The Before Agent callback executes right before this main work begins for that specific request.",
+      "Before sending a request to... the Large Language Model (LLM): These callbacks (Before Model, After Model) allow you to inspect or modify the data going to and coming from the LLM specifically."
+    ]
+  },
+  {
+    "input": "Write a Python callback function to skip an agent's execution if a specific flag is set in the session state.",
+    "expected_output": "from google.adk.agents.callback_context import CallbackContext\nfrom google.genai import types\nfrom typing import Optional\n\ndef skip_logic(callback_context: CallbackContext) -> Optional[types.Content]:\n    # Check for the flag in session state\n    if callback_context.state.get('skip_agent', False):\n        return types.Content(\n            parts=[types.Part(text='Agent execution skipped due to state flag.')],\n            role='model'\n        )\n    return None",
+    "context": [
+      "If the flag is True, the callback returns a types.Content object. This tells the ADK framework to skip the agent's main execution entirely.",
+      "Return None to allow the LlmAgent's normal execution."
+    ]
+  },
+  {
+    "input": "What are 'Artifacts' in ADK and how do they differ from session 'state'?",
+    "expected_output": "Artifacts are named, versioned pieces of binary data (like images, PDFs, or audio) associated with a session or user. While session 'state' is optimized for small key-value data (strings, numbers, simple lists), Artifacts are designed for larger blobs of non-textual data that require persistent, versioned storage managed by an Artifact Service.",
+    "context": [
+      "Artifacts represent a crucial mechanism for managing named, versioned binary data... handling data beyond simple text strings.",
+      "While session state is suitable for storing small pieces of configuration... Artifacts are designed for scenarios involving binary or large data."
+    ]
+  },
+  {
+    "input": "Provide a Python snippet for saving an image as an artifact using the ToolContext.",
+    "expected_output": "from google.adk.tools import ToolContext\nimport google.genai.types as types\n\nasync def save_image_tool(image_bytes: bytes, tool_context: ToolContext):\n    # Create the artifact Part\n    image_artifact = types.Part.from_bytes(data=image_bytes, mime_type='image/png')\n    \n    # Save the artifact and get the version\n    version = await tool_context.save_artifact(filename='user_upload.png', data=image_artifact)\n    return {'status': 'success', 'version': version}",
+    "context": [
+      "Artifacts are consistently represented using the standard google.genai.types.Part object.",
+      "Saving Artifacts: version = await context.save_artifact(filename='my_file.txt', data=my_artifact_part)"
+    ]
+  },
+  {
+    "input": "How can I access the last 5 artifacts saved by a user across all their sessions?",
+    "expected_output": "To access artifacts across sessions, you must use user-namespacing. When listing or loading, set the 'is_user_namespace' parameter to True. For example: `artifact_keys = await context.list_artifacts(is_user_namespace=True)`. This allows the agent to retrieve data saved persistently for that specific user regardless of the current session ID.",
+    "context": [
+      "User Namespace: Data is tied to the user_id and persists across different sessions for that same user.",
+      "is_user_namespace (bool, optional): If True, interacts with artifacts in the user-specific scope."
+    ]
+  },
+  {
+    "input": "What is the structural importance of the 'App' object in an ADK project?",
+    "expected_output": "The App object is the central configuration hub that bundles the root agent with global services (SessionService, ArtifactService, MemoryService) and Plugins. It must be assigned to a variable named 'app' to ensure compatibility with ADK CLI tools like 'adk run' and 'adk web'.",
+    "context": [
+      "The App object... serves as the central point for defining your agent application's name, the root agent... and various services.",
+      "In your agent project code, set your App object to the variable name app so it is compatible with the ADK command line interface runner tools."
+    ]
+  },
+  {
+    "input": "Explain the 'Idempotency Awareness' best practice when designing ADK callbacks.",
+    "expected_output": "Idempotency awareness means designing callbacks—especially those with external side effects like incrementing a counter or sending a notification—to be safe to run multiple times with the same input. This is critical because the framework or application might retry events or agent invocations, and non-idempotent callbacks could lead to duplicate actions or inconsistent states.",
+    "context": [
+      "Consider Idempotency: If a callback performs actions with external side effects... design it to be idempotent... to handle potential retries.",
+      "While ADK services aim for consistency, consider potential downstream effects if your application logic re-processes events."
+    ]
+  },
+  {
+    "input": "How can I programmatically find a specific sub-agent within a large agent tree using the Python ADK?",
+    "expected_output": "You can use the `find_agent(name)` or `find_sub_agent(name)` methods provided by the `BaseAgent` class. `find_agent` searches through the current agent and all its descendants, returning the matching `BaseAgent` object or `None` if not found. These methods are essential for dynamically interacting with modular agent hierarchies.",
+    "context": [
+      "find_agent(name): Finds the agent with the given name in this agent and its descendants.",
+      "find_sub_agent(name): Finds the agent with the given name in this agent’s descendants."
+    ]
+  },
+  {
+    "input": "What are the required fields for the `/run` REST API endpoint, and what does the `state_delta` parameter do?",
+    "expected_output": "The required fields for the `/run` endpoint are `appName`, `userId`, and `sessionId`. The optional `state_delta` parameter is an object that allows you to apply updates to the session state immediately before the agent run begins, which is useful for injecting context or user preferences dynamically.",
+    "context": [
+      "appName (string, required): The name of the application. userId (string, required). sessionId (string, required).",
+      "state_delta (object, optional): A delta of the state to apply before the run."
+    ]
+  },
+  {
+    "input": "Explain how to configure an external Vertex AI Search engine using the CLI's memory service options.",
+    "expected_output": "When using the `adk web` or `adk api_server` commands, you can connect to a Vertex AI search engine by using the `--memory_service_uri` flag with a specific URI scheme. For a RAG corpus, use 'rag://<rag_corpus_id>'. For a Vertex AI Memory Bank, use the format 'agentengine://<agent_engine_resource_id>'.",
+    "context": [
+      "--memory_service_uri: Optional. The URI of the memory service.",
+      "Use ‘rag://<rag_corpus_id>’ to connect to Vertex AI Rag Memory Service. Use ‘agentengine://<agent_engine_resource_id>’ to connect to Vertex AI Memory Bank Service."
+    ]
+  },
+  {
+    "input": "Write a YAML configuration for an LlmAgent that includes a custom Python tool defined in a separate module.",
+    "expected_output": "agent_class: \"LlmAgent\"\nname: \"MyAgent\"\ninstruction: \"You are a helpful assistant.\"\ntools:\n  - name: \"my_package.my_module.my_custom_tool_function\"\n    args:\n      - name: \"api_key\"\n        value: \"YOUR_SECRET_KEY\"",
+    "context": [
+      "For user-defined tool instances, the name is the fully qualified path to the tool instance.",
+      "Example: tools: - name: my_library.my_tools.create_tool args: - name: param1 value: value1."
+    ]
+  },
+  {
+    "input": "What is the difference between `before_agent_callback` and `before_model_callback` in the AgentConfig YAML schema?",
+    "expected_output": "In the YAML schema, `before_agent_callbacks` are configured at the agent level and run before the entire agent execution cycle begins. `before_model_callbacks` (found under LlmAgentConfig) are more granular, running specifically before each interaction with the LLM. Both use the `CodeConfig` object to reference Python functions by name.",
+    "context": [
+      "before_agent_callbacks: Optional. The before_agent_callbacks of the agent. Example: - name: my_library.security_callbacks.before_agent_callback.",
+      "Code reference config for a variable, a function, or a class. This config is used for configuring callbacks and tools."
+    ]
+  },
+  {
+    "input": "How does the `InvocationContext` correlate different steps of a single user request in Python?",
+    "expected_output": "The `InvocationContext` uses a unique `invocation_id` to correlate all events, tool calls, and LLM turns triggered by a single user message. It also manages the lifecycle via flags like `end_invocation`, which can be set to `True` by callbacks or tools to terminate the process before a final response is naturally generated.",
+    "context": [
+      "An invocation context represents the data of a single invocation of an agent.",
+      "invocation_id (string): The ID of the invocation.",
+      "end_invocation (boolean): The end_invocation is set to true by any callbacks or tools."
+    ]
+  },
+  {
+    "input": "Provide the CLI command to start the ADK API server on a specific host and port with CORS allowed for all origins.",
+    "expected_output": "adk api_server --host 0.0.0.0 --port 9000 --allow_origins \"*\" /path/to/agents_dir",
+    "context": [
+      "adk api_server [OPTIONS] [AGENTS_DIR]",
+      "--host <host>: Optional. The binding host of the server. --port <port>: Optional. The port of the server. --allow_origins <allow_origins>: Optional. Any additional origins to allow for CORS."
+    ]
+  },
+  {
+    "input": "What are the three core types of workflow agents in ADK and how do they ensure deterministic execution?",
+    "expected_output": "The three core workflow agents are SequentialAgent, ParallelAgent, and LoopAgent. They ensure deterministic execution by following predefined logic patterns—executing sub-agents in a fixed order, simultaneously, or repeatedly—without consulting an LLM for orchestration decisions. This makes the execution sequence predictable and reliable for structured processes.",
+    "context": [
+      "ADK provides three core workflow agent types... Sequential Agents: Executes sub-agents one after another... Loop Agents: Repeatedly executes its sub-agents... Parallel Agents: Executes multiple sub-agents in parallel.",
+      "They determine the execution sequence according to their type... without consulting an LLM for the orchestration itself. This results in deterministic and predictable execution patterns."
+    ]
+  },
+  {
+    "input": "Write the Python code for a 'ParallelAgent' that performs research and analysis simultaneously using two different sub-agents.",
+    "expected_output": "from google.adk.agents import Agent, ParallelAgent\n\nresearch_agent = Agent(name=\"Researcher\", model=\"gemini-2.0-flash\", instruction=\"Research the topic.\")\nanalysis_agent = Agent(name=\"Analyzer\", model=\"gemini-2.0-flash\", instruction=\"Analyze the data.\")\n\nparallel_agent = ParallelAgent(\n    name=\"ResearchAndAnalysis\",\n    description=\"Performs research and analysis in parallel.\",\n    sub_agents=[research_agent, analysis_agent]\n)",
+    "context": [
+      "Parallel Agents: Executes multiple sub-agents in parallel.",
+      "SequentialAgent sequentialPipelineAgent = SequentialAgent.builder().name(\"ResearchAndSynthesisPipeline\").subAgents(parallelResearchAgent, mergerAgent)..."
+    ]
+  },
+  {
+    "input": "Explain the difference between 'Agent Transfer' and 'AgentTool' in multi-agent communication.",
+    "expected_output": "Agent Transfer (Auto Flow) is an LLM-driven delegation where the responsibility for the conversation is completely transferred to the sub-agent. In contrast, an AgentTool (explicit invocation) treats another agent as a tool; the calling agent remains in control, receives the tool-agent's response, and summarizes it for the user.",
+    "context": [
+      "LLM-Driven Delegation (Agent Transfer): Use case for building hierarchies... delegation is controlled by the LLM.",
+      "Explicit Invocation (AgentTool): Use case where an agent treats another agent as a tool... The response from the tool-agent is passed back to the calling agent."
+    ]
+  },
+  {
+    "input": "How can I implement a custom execution logic that goes beyond predefined workflow agents?",
+    "expected_output": "You can implement custom logic by extending the `BaseAgent` class and overriding its `run_async` (or `runLiveImpl` for streaming) method. This allows you to define complex conditional flows, manual state management, or specialized integration logic that isn't possible with standard Sequential or Parallel agents.",
+    "context": [
+      "Custom agents provide specialized capabilities or rules needed for unique integrations.",
+      "Beyond Predefined Workflows... Implementing Custom Logic: ...extend BaseAgent and override its execution methods."
+    ]
+  },
+  {
+    "input": "Provide the Python configuration for an ADK agent using a self-hosted vLLM endpoint via LiteLLM.",
+    "expected_output": "from google.adk.models.litellm import LiteLlm\nfrom google.adk.agents import Agent\n\nvllm_model = LiteLlm(\n    model=\"openai/meta-llama/Llama-3-70b-instruct\", # LiteLLM syntax\n    api_base=\"http://localhost:8000/v1\",\n    api_key=\"YOUR_VLLM_KEY\"\n)\n\nagent = Agent(\n    name=\"LlamaAgent\",\n    model=vllm_model,\n    instruction=\"You are a local Llama-powered assistant.\"\n)",
+    "context": [
+      "Using Open & Local Models via LiteLLM... Self-Hosted Endpoint (e.g., vLLM): ...LiteLlm(model='openai/...', api_base='...', api_key='...')"
+    ]
+  },
+  {
+    "input": "What is 'Compositional Function Calling' (CFC) and how is it enabled in an agent's RunConfig?",
+    "expected_output": "Compositional Function Calling (CFC) is an experimental feature that allows an agent to dynamically execute complex, multi-step tool calls based on model outputs. It is enabled by setting `support_cfc=True` within the `RunConfig` object passed to the runner.",
+    "context": [
+      "Enabling Compositional Function Calling creates an agent that can dynamically execute functions based on model outputs.",
+      "config = RunConfig(streaming_mode=StreamingMode.SSE, support_cfc=True, max_llm_calls=150)"
+    ]
+  },
+  {
+    "input": "How do you define an exit condition for a LoopAgent in Python ADK?",
+    "expected_output": "You define an exit condition by providing an 'exit_tool' to the LoopAgent. This tool is a function that, when called by a sub-agent within the loop, signals to the LoopAgent to terminate the repetition. You can also set a `max_iterations` parameter as a safety fallback.",
+    "context": [
+      "Loop Agents: Repeatedly executes its sub-agents until a specific termination condition is met.",
+      "LoopAgent refinementLoop = LoopAgent.builder().name(\"RefinementLoop\").subAgents(criticAgent, refinerAgent).maxIterations(5).build();"
+    ]
+  },
+  {
+    "input": "What is the Agent2Agent (A2A) protocol and how does it facilitate collaboration in ADK?",
+    "expected_output": "The Agent2Agent (A2A) protocol is an open standard that allows independent AI agents to communicate and collaborate. ADK facilitates this by allowing a 'Consuming Agent' to treat a 'Remote Agent' as a tool or sub-agent, handling discovery via an Agent Card (JSON) and managing the underlying network communication and capability exchange.",
+    "context": [
+      "With Agent Development Kit (ADK), you can build complex multi-agent systems where different agents need to collaborate and interact using Agent2Agent (A2A) Protocol!",
+      "The Customer Service Agent can simply call methods on the RemoteA2aAgent as if it were a tool, and the ADK handles all the underlying communication to the Product Catalog Agent."
+    ]
+  },
+  {
+    "input": "Provide the Python code to expose an ADK agent as an A2A service on a specific port.",
+    "expected_output": "from google.adk.a2a import A2aServer\nfrom my_agent.agent import root_agent\n\n# root_agent is your existing ADK agent instance\na2a_server = A2aServer(agent=root_agent)\n\n# Start the server on port 8001\nif __name__ == '__main__':\n    a2a_server.run(host='0.0.0.0', port=8001)",
+    "context": [
+      "To expose your agent... a2a_server = A2aServer(agent=root_agent).",
+      "a2a_server.run(host='0.0.0.0', port=8001)"
+    ]
+  },
+  {
+    "input": "How do you consume a remote A2A agent in a Python ADK project?",
+    "expected_output": "You consume a remote agent by using the `RemoteA2aAgent` class. You must provide the `url` of the remote A2A server and a `name` for the agent. This remote agent can then be added to the `sub_agents` or `tools` list of your local agent.",
+    "context": [
+      "prime_agent = RemoteA2aAgent(\n    url='http://localhost:8001',\n    name='prime_agent'\n)",
+      "Now, you can include this remote agent as a sub-agent in your root agent definition."
+    ]
+  },
+  {
+    "input": "Write the Go code to initialize and run an A2A server for a 'PrimeAgent'.",
+    "expected_output": "package main\n\nimport (\n    \"context\"\n    \"log\"\n    \"google.golang.org/adk/a2a/launcher\"\n    \"google.golang.org/adk\"\n    \"google.golang.org/adk/services\"\n    \"google.golang.org/adk/session\"\n)\n\nfunc main() {\n    // Assuming primeAgent is already defined\n    config := &adk.Config{\n        AgentLoader:    services.NewSingleAgentLoader(primeAgent),\n        SessionService: session.InMemoryService(),\n    }\n\n    if err := launcher.Run(context.Background(), config); err != nil {\n        log.Fatalf(\"launcher.Run() error = %v\", err)\n    }\n}",
+    "context": [
+      "config := &adk.Config{ AgentLoader: services.NewSingleAgentLoader(primeAgent), SessionService: session.InMemoryService(), }",
+      "if err := launcher.Run(context.Background(), config); err != nil { log.Fatalf(\"launcher.Run() error = %v\", err) }"
+    ]
+  },
+  {
+    "input": "In an A2A Go implementation, how do you add a remote agent to a local agent's sub-agent list?",
+    "expected_output": "In Go, you use the `remotea2a.New` function to create a reference to the remote agent by providing its URL. Then, you include this returned agent object in the `SubAgents` slice of your local agent's configuration.",
+    "context": [
+      "primeAgent, _ := remotea2a.New(remotea2a.Config{ URL: \"http://localhost:8001\", })",
+      "rootAgent, _ := llmagent.New(llmagent.Config{ ... AgentConfig: agent.Config{ Name: \"a2a_root\", SubAgents: []agent.Agent{rollAgent, primeAgent}, }, })"
+    ]
+  },
+  {
+    "input": "Explain the interaction flow when a user asks a 'Consuming Agent' to perform a task handled by a 'Remote A2A Agent'.",
+    "expected_output": "1) The user sends a query to the Consuming Agent. 2) The Consuming Agent's LLM determines the Remote Agent is best suited (based on description). 3) The Consuming Agent triggers a `transfer_to_agent` call. 4) ADK's `RemoteA2aAgent` wrapper sends the request over the network to the Remote Agent's A2A Server. 5) The Remote Agent processes the query and returns the response. 6) The Consuming Agent receives and presents the final answer to the user.",
+    "context": [
+      "The Customer Service Agent can simply call methods on the RemoteA2aAgent as if it were a tool... ADK handles all the underlying communication.",
+      "Bot calls tool: transfer_to_agent with args: map[agent_name:prime_agent]... Bot: 3 is a prime number."
+    ]
+  },
+  {
+    "input": "How can you verify that an A2A server is running correctly from the command line?",
+    "expected_output": "You can verify the A2A server by sending a GET request to its discovery endpoint, typically at `http://localhost:<port>`. A successful server will return a JSON object describing its capabilities, version, and the agents it exposes. For example: `curl http://localhost:8001`.",
+    "context": [
+      "To verify that your A2A server is running, open your web browser and go to: http://localhost:8001.",
+      "You should see a JSON response similar to this: {\"agentDescriptions\":[...], \"url\":\"http://localhost:8001\", \"version\":\"0.0.1\"}"
+    ]
+  }
+]
