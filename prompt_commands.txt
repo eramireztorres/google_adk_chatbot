@@ -56,3 +56,90 @@ My goal si to create an openevolve experiment that optimizes a RAG pipeline to r
 
 /home/erick.ramirez/repo/google_adk_chatbot/rag/docs/adk_docs
 
+____
+
+
+The file
+
+/home/erick/repo/google_adk_chatbot/.agent/skills/openevolve-experiment/SKILL.md
+
+contains the skill for antigravity to create openevolve experiments
+
+But it has some problems:
+
+1- The snippet:
+
+## 1. Analyze the Problem
+Determine the nature of the optimization task:
+*   **Code Optimization** (e.g., speeding up a function, improving an algorithm):
+    *   Use `diff_based_evolution: true`.
+    *   The LLM will edit parts of the code.
+*   **Prompt/Text Optimization** (e.g., improving an LLM prompt):
+    *   Use `diff_based_evolution: false`.
+    *   The LLM will rewrite the entire text.
+
+Suggests that diff_based_evolution should be true for code optimization and false otherwise, but actually is better to set it true if the LLM is to modify only small parts of the initial text (code or not), and it should be false if the LLM is to rewrite the initial text completely (code or not)
+
+2-
+
+        # EVOLVE-BLOCK-START
+
+        # EVOLVE-BLOCK-END
+
+Block is only needed when diff_based_evolution is false
+
+
+3- evaluator.py's evaluate function should return combined_score instead of composite_score. Is combined_score what openevolve uses by default to compare iterations. It may return other values in dictionary which are going to be informed to LLM in next iterations. Fix code example accordingly
+
+4- Change
+
+    llm:
+      api_base: "https://generativelanguage.googleapis.com/v1beta/openai/"
+      model: "gemini-2.5-flash"
+      temperature: 0.7
+
+to
+
+    llm:
+      api_base: "https://api.openai.com/v1"
+      model: "gpt-4.1-mini"
+      temperature: 0.7
+
+And in general prefer gpt-4.1-mini as default LLM model
+
+5- There is no suggestion on when to use
+
+include_artifacts (that could be useful when we want the LLM to receive errors from previous iterations, and it is not a big problem using more tokens for that)
+
+
+exploitation_ratio (small if we want diversity)
+
+6- Some other config parameters that could be useful
+
+Your tasks are:
+
+1- Study the above observations
+2- Study openevolve docs in
+
+/home/erick/repo/google_adk_chatbot/rag/docs/openevolve/openevolve_config_hyperparameters_cheat_sheet.txt
+/home/erick/repo/google_adk_chatbot/rag/docs/openevolve/README.md
+
+3- Improve
+
+/home/erick/repo/google_adk_chatbot/.agent/skills/openevolve-experiment/SKILL.md
+
+
+____
+
+
+Add two more improvements:
+
+1- One to pick the adequate for top level:
+
+log_level: Logging verbosity (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+
+
+2- Add the indication in skills so antigravity, besides
+
+(`config.yaml`, `evaluator.py`, `initial_program.py`)  it creates a python script that tries evaluator in initial program (or text)
+and run it to check if it raises no errors
