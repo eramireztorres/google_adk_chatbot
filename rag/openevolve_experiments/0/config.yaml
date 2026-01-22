@@ -1,12 +1,19 @@
-max_iterations: 20
+max_iterations: 100
+checkpoint_interval: 5
 diff_based_evolution: true
-max_code_length: 20000
-log_level: INFO
+max_code_length: 30000
+log_level: DEBUG
+
 
 llm:
   api_base: "https://api.openai.com/v1"
-  model: "gpt-4.1-mini"
+  models:
+    - name: "gpt-4.1-mini"
+      weight: 1.0
   temperature: 0.7
+  max_tokens: 16000
+  timeout: 120
+  retries: 3
 
 prompt:
   system_message: |
@@ -22,9 +29,12 @@ prompt:
     
     2. **Retrieval**: Modify `RAGSystem.__init__` and `query`. Experiment with:
        - `top_k` (k) parameter.
-       - Hybrid search (if you can implement keyword search to combine with vector search).
-       - Re-ranking (if feasible with available libraries/APIs, or simple heuristic re-ranking).
-       - Query expansion or rewriting before retrieval.
+       - Vector store choice (prefer FAISS for indexing and retrieval).
+       - Retrieval strategy (similarity vs. MMR) and relevance thresholds if you implement them.
+       - Optional FAISS persistence (save/load local index) and relevance score filtering.
+        - Hybrid search (if you can implement keyword search to combine with vector search).
+        - Re-ranking (if feasible with available libraries/APIs, or simple heuristic re-ranking).
+        - Query expansion or rewriting before retrieval.
        
     3. **Generation**: Modify the prompt in `query`.
     
@@ -42,5 +52,6 @@ database:
   population_size: 20
 
 evaluator:
-  timeout: 300
-  parallel_evaluations: 2
+  timeout: 1200
+  parallel_evaluations: 1
+  cascade_evaluation: false

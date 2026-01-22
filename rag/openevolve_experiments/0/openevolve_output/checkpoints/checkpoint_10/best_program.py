@@ -32,10 +32,10 @@ class RAGSystem:
         self.llm = None
         
         # Hyperparameters for evolution
-        self.chunk_size = 1000
-        self.chunk_overlap = 200
-        self.top_k = 5
-        self.temperature = 0.7
+        self.chunk_size = 1200
+        self.chunk_overlap = 300
+        self.top_k = 8
+        self.temperature = 0.3
         
         # Load env
         load_dotenv(os.path.join(os.path.dirname(__file__), '.env'))
@@ -72,15 +72,18 @@ class RAGSystem:
 
     def _chunk_document(self, text: str, source: str) -> List[Document]:
         """
-        Ad-hoc chunking logic adapted from run_ingestion.py.
+        Enhanced chunking: 
+        1) Split first by markdown headers (## or ###),
+        2) Then apply code fence splitting and density checks per section,
+        3) Finally chunk text pieces with overlap.
         """
-        # Regex patterns from run_ingestion.py
         CODE_FENCE_RE = re.compile(r"```([a-zA-Z0-9_+-]*)\n(.*?)\n```", re.DOTALL)
-        CODE_SIGNAL_RE = re.compile(r"\b(def|class|import|from|package|func|public|private|return|if|for|while)\b")
+        CODE_SIGNAL_RE = re.compile(r"\b(def|class|import|from|package|func|public|private|return|if|for|while|var|let|const|async|await|struct|interface)\b")
+        HEADER_RE = re.compile(r"^(#{2,3})\s+(.+)$", re.MULTILINE)
         
         def _is_navigation_chunk(txt: str) -> bool:
             return "Skip to main content" in txt and "Navigation" in txt
-            
+        
         def _code_density(txt: str) -> float:
             lines = [line.strip() for line in txt.splitlines() if line.strip()]
             if not lines: return 0.0
@@ -88,40 +91,43 @@ class RAGSystem:
             return code_like / len(lines)
 
         chunks = []
-        cursor = 0
         
-        # Split by code fences first
-        for match in CODE_FENCE_RE.finditer(text):
-            start, end = match.span()
-            if start > cursor:
-                pre_text = text[cursor:start]
-                if pre_text.strip():
-                    if not _is_navigation_chunk(pre_text):
+        # Split by headers first to respect logical sections
+        sections = []
+        last_pos = 0
+        for m in HEADER_RE.finditer(text):
+            start = m.start()
+            if start > last_pos:
+                sections.append(text[last_pos:start])
+            last_pos = start
+        sections.append(text[last_pos:])
+
+        for section in sections:
+            cursor = 0
+            # Within each section, split by code fences
+            for match in CODE_FENCE_RE.finditer(section):
+                start, end = match.span()
+                if start > cursor:
+                    pre_text = section[cursor:start]
+                    if pre_text.strip() and not _is_navigation_chunk(pre_text):
                         self._make_text_chunks(pre_text, source, chunks, self.chunk_size, self.chunk_overlap)
-            
-            lang = (match.group(1) or "").strip()
-            code = match.group(2)
-            
-            # Logic to keep code blocks atomic
-            if code.strip():
-                fence = f"```{lang}\n{code}\n```"
-                density = _code_density(code)
-                # If high density or explicitly fenced, treat as code
-                if density > 0.2:
-                     chunks.append(Document(
-                         page_content=fence, 
-                         metadata={"source": source, "type": "code", "lang": lang, "density": density}
-                     ))
-                else:
-                    # Treat as text if low density code
-                    self._make_text_chunks(fence, source, chunks, self.chunk_size, self.chunk_overlap)
-            
-            cursor = end
-            
-        tail = text[cursor:]
-        if tail.strip() and not _is_navigation_chunk(tail):
-            self._make_text_chunks(tail, source, chunks, self.chunk_size, self.chunk_overlap)
-            
+                lang = (match.group(1) or "").strip()
+                code = match.group(2)
+                if code.strip():
+                    fence = f"```{lang}\n{code}\n```"
+                    density = _code_density(code)
+                    if density > 0.2:
+                        chunks.append(Document(
+                            page_content=fence,
+                            metadata={"source": source, "type": "code", "lang": lang, "density": density}
+                        ))
+                    else:
+                        self._make_text_chunks(fence, source, chunks, self.chunk_size, self.chunk_overlap)
+                cursor = end
+            tail = section[cursor:]
+            if tail.strip() and not _is_navigation_chunk(tail):
+                self._make_text_chunks(tail, source, chunks, self.chunk_size, self.chunk_overlap)
+
         return chunks
 
     def _make_text_chunks(self, text: str, source: str, chunks_list: List[Document], size: int, overlap: int):
@@ -142,8 +148,11 @@ class RAGSystem:
         if not self.vector_store:
             return {"answer": "No documents ingested.", "contexts": []}
 
-        # Retrieval
-        retrieved = self.vector_store.similarity_search(query_str, k=self.top_k)
+        # Retrieval with query reformulation: add keywords from query for hybrid search
+        keywords = " ".join(re.findall(r"\b\w{4,}\b", query_str.lower()))
+        combined_query = f"{query_str} {keywords}"
+        
+        retrieved = self.vector_store.similarity_search(combined_query, k=self.top_k)
         contexts = [d.page_content for d in retrieved]
         sources = [d.metadata.get("source", "unknown") for d in retrieved]
         
@@ -151,14 +160,16 @@ class RAGSystem:
         for i, (content, src) in enumerate(zip(contexts, sources)):
             context_block += f"Source {i+1} ({src}):\n{content}\n\n"
 
-        # Generation
+        # Generation prompt enhanced for faithfulness and code prioritization, plus answer format guidance
         prompt = (
             f"Question: {query_str}\n\n"
             f"Context:\n{context_block}\n\n"
-            "Answer the question based strictly on the context provided. "
-            "If the context contains code examples, prioritize them in your answer."
+            "Answer the question using only the context provided. "
+            "If code examples are present, highlight and explain them clearly. "
+            "Cite the source file names when relevant. "
+            "If the answer is not contained in the context, say 'I don't know based on the provided information.'"
         )
         
         res = self.llm.invoke(prompt)
-        return {"answer": res.content, "contexts": contexts}
+        return {"answer": res.content.strip(), "contexts": contexts}
 # EVOLVE-BLOCK-END

@@ -381,3 +381,302 @@ please, study
 /home/erick/repo/google_adk_chatbot/rag/docs/evidently/metrics-preset_text_evals.md
 
 Before continuing the fixing
+
+____
+
+Your tasks are
+
+1- Study the openevolve experiment in
+
+/home/erick.ramirez/repo/google_adk_chatbot/rag/openevolve_experiments/0/config.yaml
+/home/erick.ramirez/repo/google_adk_chatbot/rag/openevolve_experiments/0/evaluator.py
+/home/erick.ramirez/repo/google_adk_chatbot/rag/openevolve_experiments/0/initial_program.py
+
+2- Study the logs from last run:
+
+/home/erick.ramirez/repo/google_adk_chatbot/rag/openevolve_experiments/0/openevolve_output/logs/openevolve_20260122_100803.log
+
+3- Give me your best theory of why iteration 1 fails because of this error:
+
+2026-01-22 10:09:45,392 - INFO - Starting process-based evolution from iteration 1 for 1 iterations (total: 2)
+2026-01-22 10:09:45,392 - DEBUG - Sampled parent 486f4171-2a7e-4804-ba25-51c61474ce31 and 0 inspirations from island 0 (mode: exploitation, rand_val: 0.639)
+2026-01-22 10:09:45,480 - INFO - Early stopping disabled
+2026-01-22 10:09:45,482 - INFO - Set custom templates: system=evaluator_system_message, user=None
+2026-01-22 10:09:45,483 - INFO - Successfully loaded evaluation function from /home/erick.ramirez/repo/google_adk_chatbot/rag/openevolve_experiments/0/evaluator.py
+2026-01-22 10:09:45,483 - WARNING - Configuration has 'cascade_evaluation: true' but evaluator '/home/erick.ramirez/repo/google_adk_chatbot/rag/openevolve_experiments/0/evaluator.py' does not define 'evaluate_stage1' function. This will fall back to direct evaluation, making the cascade setting useless. Consider setting 'cascade_evaluation: false' or implementing cascade functions.
+2026-01-22 10:09:45,483 - INFO - Initialized evaluator with /home/erick.ramirez/repo/google_adk_chatbot/rag/openevolve_experiments/0/evaluator.py
+2026-01-22 10:09:45,484 - DEBUG - Using selector: EpollSelector
+2026-01-22 10:09:45,485 - ERROR - LLM generation failed: list index out of range
+2026-01-22 10:09:45,491 - WARNING - Iteration 1 error: LLM generation failed: list index out of range
+
+____
+
+Learn from these examples:
+
+
+/home/erick.ramirez/repo/google_adk_chatbot/rag/docs/openevolve/examples/signal_processing/config.yaml
+/home/erick.ramirez/repo/google_adk_chatbot/rag/docs/openevolve/examples/llm_prompt_optimization/config.yaml
+/home/erick.ramirez/repo/google_adk_chatbot/rag/docs/openevolve/examples/llm_prompt_optimization/config_qwen3_baseline.yaml
+/home/erick.ramirez/repo/google_adk_chatbot/rag/docs/openevolve/examples/llm_prompt_optimization/config_qwen3_evolution.yaml
+
+and fix
+
+
+/home/erick.ramirez/repo/google_adk_chatbot/rag/openevolve_experiments/0/config.yaml
+
+
+____
+
+Check the new error I got in
+
+/home/erick.ramirez/repo/google_adk_chatbot/rag/openevolve_experiments/0/openevolve_output/logs/openevolve_20260122_102051.log
+
+2026-01-22 10:23:12,598 - urllib3.connectionpool - DEBUG - https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/README.md HTTP/1.1" 307 0
+2026-01-22 10:23:12,604 - urllib3.connectionpool - DEBUG - https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/README.md HTTP/1.1" 200 0
+2026-01-22 10:23:12,721 - urllib3.connectionpool - DEBUG - https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json HTTP/1.1" 307 0
+2026-01-22 10:23:12,726 - urllib3.connectionpool - DEBUG - https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json HTTP/1.1" 200 0
+2026-01-22 10:23:12,845 - urllib3.connectionpool - DEBUG - https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/sentence_bert_config.json HTTP/1.1" 307 0
+2026-01-22 10:23:12,850 - urllib3.connectionpool - DEBUG - https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/sentence_bert_config.json HTTP/1.1" 200 0
+2026-01-22 10:23:12,971 - urllib3.connectionpool - DEBUG - https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json HTTP/1.1" 404 0
+2026-01-22 10:23:13,087 - urllib3.connectionpool - DEBUG - https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json HTTP/1.1" 307 0
+2026-01-22 10:23:13,092 - urllib3.connectionpool - DEBUG - https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json HTTP/1.1" 200 0
+2026-01-22 10:23:13,233 - urllib3.connectionpool - DEBUG - https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer_config.json HTTP/1.1" 307 0
+2026-01-22 10:23:13,238 - urllib3.connectionpool - DEBUG - https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/tokenizer_config.json HTTP/1.1" 200 0
+2026-01-22 10:23:13,363 - urllib3.connectionpool - DEBUG - https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main/additional_chat_templates?recursive=False&expand=False HTTP/1.1" 404 64
+2026-01-22 10:23:13,491 - urllib3.connectionpool - DEBUG - https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main?recursive=True&expand=False HTTP/1.1" 200 6465
+2026-01-22 10:23:13,628 - urllib3.connectionpool - DEBUG - https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/1_Pooling/config.json HTTP/1.1" 307 0
+2026-01-22 10:23:13,633 - urllib3.connectionpool - DEBUG - https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/1_Pooling%2Fconfig.json HTTP/1.1" 200 0
+2026-01-22 10:23:13,754 - urllib3.connectionpool - DEBUG - https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2 HTTP/1.1" 200 6837
+2026-01-22 10:23:13,761 - openevolve.evaluator - INFO - Evaluated program 3c1ae5e4-41a3-4609-9c08-e7e94dd4dd3a in 8.11s: combined_score=0.0000, error=Cannot re-initialize CUDA in forked subprocess. To use CUDA with multiprocessing, you must use the 'spawn' start method
+2026-01-22 10:23:13,767 - openevolve.database - DEBUG - MAP-Elites coords: {'complexity': 9, 'combined_score': 0}
+2026-01-22 10:23:13,768 - openevolve.database - DEBUG - Program 3c1ae5e4-41a3-4609-9c08-e7e94dd4dd3a inheriting island 0 from parent c165fb5c-301e-4375-a93a-7e71551fcba1
+2026-01-22 10:23:13,768 - openevolve.database - INFO - New MAP-Elites cell occupied in island 0: {'complexity': 9, 'combined_score': 0}
+2026-01-22 10:23:13,768 - openevolve.database - DEBUG - Added program 3c1ae5e4-41a3-4609-9c08-e7e94dd4dd3a to island 0
+2026-01-22 10:23:13,768 - openevolve.database - DEBUG - Island 0 generation incremented to 1
+2026-01-22 10:23:13,768 - openevolve.process_parallel - INFO - Iteration 1: Program 3c1ae5e4-41a3-4609-9c08-e7e94dd4dd3a (parent: c165fb5c-301e-4375-a93a-7e71551fcba1) completed in 34.11s
+2026-01-22 10:23:13,768 - openevolve.process_parallel - INFO - Metrics: combined_score=0.0000, error=Cannot re-initialize CUDA in forked subprocess. To use CUDA with multiprocessing, you must use the 'spawn' start method
+
+If you find no easy solution, think about removing the problem metric from combined_score
+
+____
+
+Your tasks are:
+
+1- Study docs in
+
+/home/erick.ramirez/repo/google_adk_chatbot/rag/docs/evidently/examples-LLM_rag_evals.md
+/home/erick.ramirez/repo/google_adk_chatbot/rag/docs/evidently/RAG evals - Evidently AI - Documentation.pdf
+/home/erick.ramirez/repo/google_adk_chatbot/rag/docs/evidently/metrics-preset_text_evals.md
+
+2- Analyze what are the most useful metrics I could use to evaluate my RAG pipeline (not too many, maximum 5)
+3- Improve
+
+/home/erick.ramirez/repo/google_adk_chatbot/rag/openevolve_experiments/0/evaluator.py
+
+accordingly
+
+__
+
+
+I've run
+
+openevolve-run /home/erick.ramirez/repo/google_adk_chatbot/rag/openevolve_experiments/0/initial_program.py /home/erick.ramirez/repo/google_adk_chatbot/rag/openevolve_experiments/0/evaluator.py --config /home/erick.ramirez/repo/google_adk_chatbot/rag/openevolve_experiments/0/config.yaml
+
+Expecting to complete 100 iterations
+
+But, i got this errors:
+
+2026-01-22 11:24:04,156 - ERROR - Task exception was never retrieved
+future: <Task finished name='Task-2591' coro=<AsyncClient.aclose() done, defined at /home/erick.ramirez/repo/google_adk_chatbot/venv/lib/python3.11/site-packages/httpx/_client.py:1978> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/home/erick.ramirez/repo/google_adk_chatbot/venv/lib/python3.11/site-packages/httpx/_client.py", line 1985, in aclose
+    await self._transport.aclose()
+  File "/home/erick.ramirez/repo/google_adk_chatbot/venv/lib/python3.11/site-packages/httpx/_transports/default.py", line 406, in aclose
+    await self._pool.aclose()
+  File "/home/erick.ramirez/repo/google_adk_chatbot/venv/lib/python3.11/site-packages/httpcore/_async/connection_pool.py", line 353, in aclose
+    await self._close_connections(closing_connections)
+  File "/home/erick.ramirez/repo/google_adk_chatbot/venv/lib/python3.11/site-packages/httpcore/_async/connection_pool.py", line 345, in _close_connections
+    await connection.aclose()
+  File "/home/erick.ramirez/repo/google_adk_chatbot/venv/lib/python3.11/site-packages/httpcore/_async/connection.py", line 173, in aclose
+    await self._connection.aclose()
+  File "/home/erick.ramirez/repo/google_adk_chatbot/venv/lib/python3.11/site-packages/httpcore/_async/http11.py", line 258, in aclose
+    await self._network_stream.aclose()
+  File "/home/erick.ramirez/repo/google_adk_chatbot/venv/lib/python3.11/site-packages/httpcore/_backends/anyio.py", line 53, in aclose
+    await self._stream.aclose()
+  File "/home/erick.ramirez/repo/google_adk_chatbot/venv/lib/python3.11/site-packages/anyio/streams/tls.py", line 241, in aclose
+    await self.transport_stream.aclose()
+  File "/home/erick.ramirez/repo/google_adk_chatbot/venv/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1329, in aclose
+    self._transport.close()
+  File "/home/erick.ramirez/anaconda3/lib/python3.11/asyncio/selector_events.py", line 864, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/home/erick.ramirez/anaconda3/lib/python3.11/asyncio/base_events.py", line 762, in call_soon
+    self._check_closed()
+  File "/home/erick.ramirez/anaconda3/lib/python3.11/asyncio/base_events.py", line 520, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+
+
+And also, after that:
+
+2026-01-22 11:39:28,316 - ERROR - Error processing result from iteration 18: A process in the process pool was terminated abruptly while the future was running or pending.
+2026-01-22 11:39:28,329 - ERROR - Error submitting iteration 23: A child process terminated abruptly, the process pool is not usable anymore
+
+you can see some logs info in
+
+/home/erick.ramirez/repo/google_adk_chatbot/rag/openevolve_experiments/0/openevolve_output/logs/openevolve_20260122_105408.log
+
+Give me your best theory of what this happened
+
+____
+
+
+I've changed some parameters in
+
+/home/erick.ramirez/repo/google_adk_chatbot/rag/openevolve_experiments/0/config.yaml
+
+And now I catched the error even earlier.
+
+Investigate carefully here
+
+/home/erick.ramirez/repo/google_adk_chatbot/rag/openevolve_experiments/0/openevolve_output/logs/openevolve_20260122_120201.log
+
+And elaborate a theory
+
+If you are not completely sure about your theory, be honest and let me know
+
+
+____
+
+Could it be related to using langchain's InMemoryVectorStore as vector DB in initial program ?
+
+Should I change it to FAISS as in this example:
+
+import os
+from langchain_community.document_loaders import RecursiveUrlLoader
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_openai import OpenAIEmbeddings, ChatOpenAI
+from langchain_community.vectorstores import FAISS
+from langchain.chains import RetrievalQA
+
+# ----------------------------
+# Configuration
+# ----------------------------
+
+ROOT_URL = "https://docs.langchain.com/oss/python/"  # example: any docs root
+MAX_DEPTH = 3                                       # limit crawl depth
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+
+# ----------------------------
+# 1. Crawl documentation
+# ----------------------------
+
+print("Crawling documentation...")
+
+loader = RecursiveUrlLoader(
+    url=ROOT_URL,
+    max_depth=MAX_DEPTH,
+    prevent_outside=True,     # stay inside domain
+    use_async=True,           # faster
+)
+
+documents = loader.load()
+
+print(f"Loaded {len(documents)} pages")
+
+# Optional: inspect one document
+print(documents[0].metadata)
+print(documents[0].page_content[:300])
+
+# ----------------------------
+# 2. Chunk documents
+# ----------------------------
+
+splitter = RecursiveCharacterTextSplitter(
+    chunk_size=1000,
+    chunk_overlap=150,
+)
+
+chunks = splitter.split_documents(documents)
+
+print(f"Created {len(chunks)} chunks")
+
+# ----------------------------
+# 3. Create embeddings + vector store
+# ----------------------------
+
+embeddings = OpenAIEmbeddings(model="text-embedding-3-large")
+
+vectorstore = FAISS.from_documents(chunks, embeddings)
+
+# Optional: persist locally
+vectorstore.save_local("docs_faiss_index")
+
+# ----------------------------
+# 4. Build RAG chain
+# ----------------------------
+
+llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+
+retriever = vectorstore.as_retriever(
+    search_type="similarity",
+    search_kwargs={"k": 5},
+)
+
+qa_chain = RetrievalQA.from_chain_type(
+    llm=llm,
+    retriever=retriever,
+    return_source_documents=True,
+)
+
+# ----------------------------
+# 5. Query
+# ----------------------------
+
+while True:
+    query = input("\nAsk a question (or 'exit'): ")
+    if query.lower() == "exit":
+        break
+
+    result = qa_chain.invoke({"query": query})
+
+    print("\nAnswer:\n", result["result"])
+
+    print("\nSources:")
+    for doc in result["source_documents"]:
+        print(" -", doc.metadata.get("source"))
+
+
+?
+
+____
+
+Learn from this example:
+
+/home/erick.ramirez/repo/google_adk_chatbot/rag/docs/langchain/LangChain with FAISS Vector DB - 🦑 TruLens.pdf
+
+In order to improve system message for LLM options
+
+
+____
+
+the skill file
+
+/home/erick.ramirez/repo/google_adk_chatbot/.agent/skills/openevolve-experiment/SKILL.md
+
+contains at least one openevolve bad signature in
+
+llm:
+  model: "gpt-4.1-mini"
+
+that should be something like:
+
+llm:
+  api_base: "https://api.openai.com/v1"
+  models:
+    - name: "gpt-4.1-mini"
+      weight: 1.0
+
+Your tasks are:
+
+1- Study carefully the skill markdown file
+2- Create a robust fixing plan in order to get the best openevolve-experiment design of every agent that uses it

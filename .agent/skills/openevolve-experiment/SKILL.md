@@ -66,13 +66,19 @@ Define the evolution hyperparameters.
     ```
 *   **LLM Config (STRICT)**:
     *   MUST be nested under `llm`.
-    *   MUST include `model` and `api_base`.
+    *   MUST include `api_base` and a non-empty `models` list.
     *   Do NOT use top-level `llm_model` or `parameters`.
+    *   WARNING: If `models` is empty or mis-specified, the LLM ensemble will be empty and generation will fail.
     ```yaml
     llm:
       api_base: "https://api.openai.com/v1"
-      model: "gpt-4.1-mini"
+      models:
+        - name: "gpt-4.1-mini"
+          weight: 1.0
       temperature: 0.7
+      max_tokens: 16000
+      timeout: 120
+      retries: 3
     ```
 *   **Prompt Config (REQUIRED)**:
     *   MUST be nested under `prompt`.
@@ -91,6 +97,8 @@ Define the evolution hyperparameters.
     *   `timeout`: Max seconds per evaluation.
     *   `parallel_evaluations`: Number of parallel workers (e.g., 4).
     *   `max_tasks_per_child`: Restart workers occasionally to prevent memory leaks (e.g., 10).
+    *   WARNING: If your evaluator uses GPU-backed metrics (e.g., sentence-transformers),
+        forked multiprocessing can crash. Prefer LLM-only metrics or force CPU.
 
 ## 5. Generate `validate_setup.py`
 Create a script to verify the setup before running evolution.
@@ -207,14 +215,24 @@ max_iterations: 20
 diff_based_evolution: true
 
 llm:
-  model: "gpt-4.1-mini"
+  api_base: "https://api.openai.com/v1"
+  models:
+    - name: "gpt-4.1-mini"
+      weight: 1.0
+  temperature: 0.7
+  max_tokens: 16000
+  timeout: 120
+  retries: 3
 
 prompt:
   system_message: "You are an expert optimizer. Improve the code to run faster."
+  include_artifacts: true
 
 database:
   feature_dimensions: ["complexity", "duration"]
 
 evaluator:
   timeout: 5
+  parallel_evaluations: 2
+  max_tasks_per_child: 10
 ```
