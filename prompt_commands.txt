@@ -680,3 +680,19 @@ Your tasks are:
 
 1- Study carefully the skill markdown file
 2- Create a robust fixing plan in order to get the best openevolve-experiment design of every agent that uses it
+
+__
+
+
+
+
+
+openevolve-run /home/erick.ramirez/repo/google_adk_chatbot/rag/openevolve_experiments/0/initial_program.py \
+/home/erick.ramirez/repo/google_adk_chatbot/rag/openevolve_experiments/0/evaluator.py \
+--config /home/erick.ramirez/repo/google_adk_chatbot/rag/openevolve_experiments/0/config.yaml
+
+
+openevolve-run /home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/0/initial_program.py \
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/0/evaluator.py \
+--config /home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/0/config.yaml \
+--iterations 1

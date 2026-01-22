@@ -34,7 +34,7 @@ class RAGSystem:
         # Hyperparameters for evolution
         self.chunk_size = 1200
         self.chunk_overlap = 300
-        self.top_k = 8
+        self.top_k = 7
         self.temperature = 0.3
         
         # Load env
@@ -72,18 +72,17 @@ class RAGSystem:
 
     def _chunk_document(self, text: str, source: str) -> List[Document]:
         """
-        Enhanced chunking: 
-        1) Split first by markdown headers (## or ###),
-        2) Then apply code fence splitting and density checks per section,
-        3) Finally chunk text pieces with overlap.
+        Improved chunking:
+        - Split text by markdown headers (## or ###) to align with doc structure.
+        - Then apply code fence splitting within each header chunk.
         """
+        HEADER_RE = re.compile(r'^(#{2,3})\s*(.+)$', re.MULTILINE)
         CODE_FENCE_RE = re.compile(r"```([a-zA-Z0-9_+-]*)\n(.*?)\n```", re.DOTALL)
-        CODE_SIGNAL_RE = re.compile(r"\b(def|class|import|from|package|func|public|private|return|if|for|while|var|let|const|async|await|struct|interface)\b")
-        HEADER_RE = re.compile(r"^(#{2,3})\s+(.+)$", re.MULTILINE)
-        
+        CODE_SIGNAL_RE = re.compile(r"\b(def|class|import|from|package|func|public|private|return|if|for|while)\b")
+
         def _is_navigation_chunk(txt: str) -> bool:
             return "Skip to main content" in txt and "Navigation" in txt
-        
+
         def _code_density(txt: str) -> float:
             lines = [line.strip() for line in txt.splitlines() if line.strip()]
             if not lines: return 0.0
@@ -91,8 +90,8 @@ class RAGSystem:
             return code_like / len(lines)
 
         chunks = []
-        
-        # Split by headers first to respect logical sections
+
+        # Split by headers
         sections = []
         last_pos = 0
         for m in HEADER_RE.finditer(text):
@@ -111,6 +110,7 @@ class RAGSystem:
                     pre_text = section[cursor:start]
                     if pre_text.strip() and not _is_navigation_chunk(pre_text):
                         self._make_text_chunks(pre_text, source, chunks, self.chunk_size, self.chunk_overlap)
+
                 lang = (match.group(1) or "").strip()
                 code = match.group(2)
                 if code.strip():
@@ -148,28 +148,25 @@ class RAGSystem:
         if not self.vector_store:
             return {"answer": "No documents ingested.", "contexts": []}
 
-        # Retrieval with query reformulation: add keywords from query for hybrid search
-        keywords = " ".join(re.findall(r"\b\w{4,}\b", query_str.lower()))
-        combined_query = f"{query_str} {keywords}"
-        
-        retrieved = self.vector_store.similarity_search(combined_query, k=self.top_k)
+        # Retrieval with MMR to diversify results
+        retrieved = self.vector_store.max_marginal_relevance_search(query_str, k=self.top_k, fetch_k=self.top_k*3)
         contexts = [d.page_content for d in retrieved]
         sources = [d.metadata.get("source", "unknown") for d in retrieved]
-        
+
         context_block = ""
         for i, (content, src) in enumerate(zip(contexts, sources)):
             context_block += f"Source {i+1} ({src}):\n{content}\n\n"
 
-        # Generation prompt enhanced for faithfulness and code prioritization, plus answer format guidance
+        # Generation with more explicit instructions for faithfulness and code usage
         prompt = (
+            f"You are a helpful assistant specialized in Google ADK documentation.\n"
             f"Question: {query_str}\n\n"
-            f"Context:\n{context_block}\n\n"
-            "Answer the question using only the context provided. "
-            "If code examples are present, highlight and explain them clearly. "
-            "Cite the source file names when relevant. "
-            "If the answer is not contained in the context, say 'I don't know based on the provided information.'"
+            f"Context:\n{context_block}\n"
+            "Answer the question based strictly on the context. Do NOT hallucinate. "
+            "If code examples are present, use them to clarify your answer. "
+            "If the answer is not contained in the context, say 'I don't know.'"
         )
-        
+
         res = self.llm.invoke(prompt)
-        return {"answer": res.content.strip(), "contexts": contexts}
+        return {"answer": res.content, "contexts": contexts}
 # EVOLVE-BLOCK-END
