@@ -684,9 +684,6 @@ Your tasks are:
 __
 
 
-
-
-
 openevolve-run /home/erick.ramirez/repo/google_adk_chatbot/rag/openevolve_experiments/0/initial_program.py \
 /home/erick.ramirez/repo/google_adk_chatbot/rag/openevolve_experiments/0/evaluator.py \
 --config /home/erick.ramirez/repo/google_adk_chatbot/rag/openevolve_experiments/0/config.yaml
@@ -696,3 +693,249 @@ openevolve-run /home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/0/
 /home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/0/evaluator.py \
 --config /home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/0/config.yaml \
 --iterations 1
+
+____
+
+
+the script
+
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/0/openevolve_output/checkpoints/checkpoint_40/best_program.py
+
+contains the prototype for a RAG pipeline to retrieve info from
+
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs
+
+My goal is to use it as starting point to Build a new MCP server and integrate it into my project.
+The mcp server must provide a tool to answer queries about Google ADK using the RAG pipeline.
+
+I understand that:
+
+1- The code must be splitted, at least, in two scripts, to ensure ingestion in vector DB is run one (and not for each query)
+2- The script
+
+/home/erick/repo/google_adk_chatbot/rag/docs/rag_server.py
+
+contains some code that illustrates somehow how this MCP can be served, but it has been created for a different application. I can (carefully) get some ideas from it.
+3- It could be useful having two CLI scripts at the end: the first to be run once for ingestion (if vector DB do not exists yet) and the other one to be run each time I want to deploy the server, and allowing to change the local port.
+
+Your tasks are:
+
+1- Understand the problem. You may ask questions.
+2- Improve my initial idea (if needed)
+3- Write a new robust, step-by-step, plan to implement the MCP server.
+
+____
+
+Before continuing, I have an important question:
+
+Since the RAG is agentic, should I use A2A protocol instead of MCP ? Which would be the pros and cons of each one?
+
+Your tasks are:
+
+1- Study docs
+
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-a2a.md
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-a2a-intro.md
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-a2a-quickstart-consuming.md
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-a2a-quickstart-exposing.md
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-a2a-quickstart-exposing-go.md
+
+2- Give me the best suggestion possible for my project
+
+____
+
+I got these warnings:
+
+(venv) (base) erick@erick-home:~/repo/google_adk_chatbot$ python rag/run_adk_ingest.py
+Docs path: /home/erick/repo/google_adk_chatbot/rag/docs/adk_docs
+Index path: /home/erick/repo/google_adk_chatbot/rag/adk_rag/index
+Skipping /home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/.faiss_index/index.faiss: 'utf-8' codec can't decode byte 0xd5 in position 8: invalid continuation byte
+Skipping /home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/.faiss_index/index.pkl: 'utf-8' codec can't decode byte 0x80 in position 0: invalid start byte
+Ingested 6458 chunks.
+
+
+Should I worry ?
+
+____
+
+
+How can I check the server is running OK after this:
+
+(venv) (base) erick@erick-home:~/repo/google_adk_chatbot$ python rag/run_adk_mcp_server.py --port 8000
+Starting ADK RAG MCP Server on localhost:8000
+Using index path: /home/erick/repo/google_adk_chatbot/rag/adk_rag/index
+INFO:     Started server process [25093]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://localhost:8000 (Press CTRL+C to quit)
+
+__
+
+
+How should I modify
+
+mcp_config.json
+
+In order to consume the MCP server in google Antigravity ?
+
+____
+
+The file is empty now.
+
+Check these docs in case they help
+
+/home/erick/repo/google_adk_chatbot/rag/docs/mcp_server/gemini-cli_docs_tools_mcp-server.md at main · google-gemini_gemini-cli.pdf
+/home/erick/repo/google_adk_chatbot/rag/docs/mcp_server/Google Antigravity Documentation.pdf
+/home/erick/repo/google_adk_chatbot/rag/docs/mcp_server/Google Antigravity_ How to add custom MCP server to improve Vibe Coding _ by Tarun Jain _ Google Developer Experts _ Medium.pdf
+
+____
+
+
+I tried with
+
+{
+    "mcpServers": {
+        "adk-rag": {
+            "serverUrl": "http://localhost:8000"
+        }
+    }
+}
+
+And got
+
+Error: streamable http connection failed: calling "initialize": sending "initialize": failed to connect (session ID: ): session not found, sse fallback failed: missing endpoint: malformed line in SSE stream: "Not Found".
+
+____
+
+I got this:
+
+curl -s -X POST "http://localhost:8000/messages/?session_id=4cac7bcb97774f178e839b033e1b8a4e" \b8a4e" \
+    -H "Content-Type: application/json" \
+    -d '{
+      "jsonrpc": "2.0",
+      "id": 1,
+      "method": "initialize",
+      "params": {
+        "protocolVersion": "2024-11-05",
+        "capabilities": {},
+        "clientInfo": {
+          "name": "curl-test",
+          "version": "0.1"
+        }
+      }
+    }'
+
+Accepted
+
+And in the mcp-run console:
+
+INFO:     127.0.0.1:44938 - "POST /messages/?session_id=4cac7bcb97774f178e839b033e1b8a4e HTTP/1.1" 202 Accepted
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/uvicorn/protocols/http/httptools_impl.py", line 416, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self.scope, self.receive, self.send
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/starlette/applications.py", line 107, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/starlette/routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/starlette/routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/starlette/routing.py", line 462, in handle
+    await self.app(scope, receive, send)
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/mcp/server/sse.py", line 249, in handle_post_message
+    await writer.send(session_message)
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/anyio/streams/memory.py", line 249, in send
+    self.send_nowait(item)
+    ~~~~~~~~~~~~~~~~^^^^^^
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/anyio/streams/memory.py", line 218, in send_nowait
+    raise ClosedResourceError
+anyio.ClosedResourceError
+
+____
+
+curl -s -X POST "http://localhost:8000/messages/?session_id=2cd634ca5f4647c19f81cb997184bf04" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "initialize",
+    "params": {
+      "protocolVersion": "2024-11-05",
+      "capabilities": {},
+      "clientInfo": {
+        "name": "curl-test",
+        "version": "0.1"
+      }
+    }
+  }'
+
+
+curl -s -X POST "http://localhost:8000/messages/?session_id=2cd634ca5f4647c19f81cb997184bf04" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 3,
+    "method": "tools/call",
+    "params": {
+      "name": "get_adk_info",
+      "arguments": {
+        "query": "What is ADK?"
+      }
+    }
+  }'
+
+
+I tried this:
+
+curl -s -X POST "http://localhost:8000/messages/?session_id=2cd634ca5f4647c19f81cb997184bf04" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 3,
+    "method": "tools/call",
+    "params": {
+      "name": "get_adk_info",
+      "arguments": {
+        "query": "Give me a python example of how to use FunctionTool in a Google ADK agent"
+      }
+    }
+  }'
+
+
+
+and got:
+
+data: {"jsonrpc":"2.0","id":3,"result":{"content":[{"type":"text","text":"{\n  \"answer\": \"Here is a concise Python example of how to use `FunctionTool` in a Google ADK agent based on the provided context:\\n\\n```python\\nfrom google.adk.tools import FunctionTool, ToolContext\\nfrom google.adk.agents import Agent\\n\\n# Define your custom function with a ToolContext parameter\\ndef my_custom_function(param1: str, tool_context: ToolContext) -> dict:\\n    \\\"\\\"\\\"\\n    A simple example function that can be wrapped as a FunctionTool.\\n    \\\"\\\"\\\"\\n    # Your logic here\\n    return {\\\"result\\\": f\\\"Received param1: {param1}\\\"}\\n\\n# Wrap the function with FunctionTool\\nmy_tool = FunctionTool(func=my_custom_function)\\n\\n# Create an agent that uses this FunctionTool\\nmy_agent = Agent(\\n    name=\\\"MyAgent\\\",\\n    model=\\\"gemini-2.0-flash\\\",\\n    description=\\\"Agent using a custom FunctionTool\\\",\\n    tools=[my_tool],\\n)\\n```\\n\\n**Explanation:**\\n\\n- Define a synchronous Python function with parameters and a `ToolContext` argument.\\n- Wrap the function using `FunctionTool(func=your_function)`.\\n- Pass the resulting tool to the agent's `tools` list.\\n\\nThis pattern is shown in Source 5 and aligns with the general usage of tools in agents from other sources.\",\n  \"contexts\": [\n    \"# from google.adk.tools import FunctionTool\",\n    \"```python\\nfrom google.adk.tools.agent_tool import AgentTool\\nfrom google.adk.agents import Agent\\nfrom google.adk.tools import google_search\\nfrom google.adk.code_executors import BuiltInCodeExecutor\\n\\n\\nsearch_agent = Agent(\\n    model='gemini-2.0-flash',\\n    name='SearchAgent',\\n    instruction=\\\"\\\"\\\"\\n    You're a specialist in Google Search\\n    \\\"\\\"\\\",\\n    tools=[google_search],\\n)\\ncoding_agent = Agent(\\n    model='gemini-2.0-flash',\\n    name='CodeAgent',\\n    instruction=\\\"\\\"\\\"\\n    You're a specialist in Code Execution\\n    \\\"\\\"\\\",\\n    code_executor=BuiltInCodeExecutor(),\\n)\\nroot_agent = Agent(\\n    name=\\\"RootAgent\\\",\\n    model=\\\"gemini-2.0-flash\\\",\\n    description=\\\"Root Agent\\\",\\n    tools=[AgentTool(agent=search_agent), AgentTool(agent=coding_agent)],\\n)\\n```\",\n    \"## Tool Types in ADK[¶](#tool-types-in-adk \\\"Permanent link\\\")\\n\\n\\nADK offers flexibility by supporting several types of tools:\\n\\n1. **[Function Tools](/adk-docs/tools-custom/function-tools/):** Tools created by you, tailored to your specific application's needs. * **[Functions/Methods](/adk-docs/tools-custom/function-tools/#1-function-tool):** Define standard synchronous functions or methods in your code (e.g., Python def). * **[Agents-as-Tools](/adk-docs/tools-custom/function-tools/#3-agent-as-a-tool):** Use another, potentially specialized, agent as a tool for a parent agent. * **[Long Running Function Tools](/adk-docs/tools-custom/function-tools/#2-long-running-function-tool):** Support for tools that perform asynchronous operations or take significant time to complete. 2. **[Built-in Tools](/adk-docs/tools/built-in-tools/):** Ready-to-use tools provided by the framework for common tasks. Examples: Google Search, Code Execution, Retrieval-Augmented Generation (RAG). 3.\",\n    \"### Built-in tool example[¶](#built-in-tool-example \\\"Permanent link\\\")\\n\\n\\nThe following example uses a built-in ADK tool function for using google search\\nto provide functionality to the agent. This agent automatically uses the search\\ntool to reply to user requests.\\n\\n```\",\n    \"```python\\nfrom google.adk.tools import FunctionTool, ToolContext\\nfrom typing import Dict\\n\\ndef my_authenticated_tool_function(param1: str, ..., tool_context: ToolContext) -> dict:\\n    # ... your logic ...\\n    pass\\n\\nmy_tool = FunctionTool(func=my_authenticated_tool_function)\\n```\",\n    \"ADK automatically wraps the native function into a `FuntionTool` whereas, you must explicitly wrap your Java methods using `FunctionTool.create(...)` + An instance of a class inheriting from `BaseTool`. + An instance of another agent (`AgentTool`, enabling agent-to-agent delegation - see [Multi-Agents](../multi-agents/)). The LLM uses the function/tool names, descriptions (from docstrings or the\\n`description` field), and parameter schemas to decide which tool to call based\\non the conversation and its instructions. PythonGoJava\",\n    \"\\n\\n## Next steps[¶](#next-steps \\\"Permanent link\\\")\\n\\nFor more information on building Tools for agents and function calling, see\\n[Function Tools](/adk-docs/tools-custom/function-tools/). For\\nmore detailed examples of tools that take advantage of parallel processing, see\\nthe samples in the\\n[adk-python](https://github.com/google/adk-python/tree/main/contributing/samples/parallel_functions)\\nrepository.\\n\\nBack to top\",\n    \"# ADK Tool Imports\\n\\nfrom google.adk.tools.function_tool import FunctionTool\\nfrom google.adk.tools.load_web_page import load_web_page\"\n  ],\n  \"sources\": [\n    \"/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-artifacts.md\",\n    \"/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-tools-built-in-tools.md\",\n    \"/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-tools-custom.md\",\n    \"/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-agents-config.md\",\n    \"/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-tools-custom-authentication.md\",\n    \"/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-agents-llm-agents.md\",\n    \"/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-tools-custom-performance.md\",\n    \"/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-tools-custom-mcp-tools.md\"\n  ]\n}"}],"isError":false}}
+
+
+Could these scripts
+
+/home/erick/repo/google_adk_chatbot/rag/run_adk_mcp_server.py
+/home/erick/repo/google_adk_chatbot/rag/adk_rag/query.py
+
+Be improved in order to allow changing the default openai model ?
+
+Is it better allowing to create an external .env with the OPENAI_API_KEY and the model ?
+
+
+
+
+

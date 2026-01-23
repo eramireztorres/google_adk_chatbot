@@ -30,3 +30,4 @@ joblib
 openevolve
 
 
+pyyaml
