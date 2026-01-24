@@ -46,7 +46,7 @@ adk-rag-ingest = "rag.run_adk_ingest:main"
 adk-rag-server = "rag.run_adk_mcp_server:main"
 
 [tool.setuptools]
-packages = ["rag", "rag.adk_rag"]
+packages = ["rag", "rag.adk_rag", "chatbot", "chatbot.ADK_assistant"]
 
 [tool.setuptools.package-data]
 "rag.adk_rag" = ["config.yaml"]
