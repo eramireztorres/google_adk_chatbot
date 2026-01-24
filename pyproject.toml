@@ -1,0 +1,52 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "google-adk-chatbot"
+version = "0.1.0"
+description = "RAG-based MCP server for querying Google ADK documentation."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+  { name = "Erick Eduardo Ramirez Torres" }
+]
+dependencies = [
+  "langchain",
+  "langchain-openai",
+  "langchain-community",
+  "langchain-text-splitters",
+  "faiss-cpu",
+  "pypdf",
+  "litellm",
+  "chromadb",
+  "sentence-transformers",
+  "pymupdf",
+  "rank-bm25",
+  "langchain-chroma",
+  "ragas",
+  "evidently",
+  "flashrank",
+  "google-genai",
+  "beautifulsoup4",
+  "google-adk",
+  "html2text",
+  "mcp[cli]",
+  "requests",
+  "deprecated",
+  "joblib",
+  "openevolve",
+  "pyyaml",
+  "pytest",
+]
+
+[project.scripts]
+adk-rag-ingest = "rag.run_adk_ingest:main"
+adk-rag-server = "rag.run_adk_mcp_server:main"
+
+[tool.setuptools]
+packages = ["rag", "rag.adk_rag"]
+
+[tool.setuptools.package-data]
+"rag.adk_rag" = ["config.yaml"]

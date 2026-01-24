@@ -12,7 +12,21 @@ HEADER_RE = re.compile(r"(#{1,6} .+)")
 
 
 def _is_navigation_chunk(text: str) -> bool:
-    return "Skip to main content" in text and "Navigation" in text
+    if "Skip to main content" not in text or "Navigation" not in text:
+        return False
+    lines = [line.strip() for line in text.splitlines() if line.strip()]
+    allowed = {"Skip to main content", "Navigation"}
+    return all(line in allowed for line in lines)
+
+
+def _strip_navigation_lines(text: str) -> str:
+    lines = []
+    for line in text.splitlines():
+        stripped = line.strip()
+        if stripped in {"Skip to main content", "Navigation"}:
+            continue
+        lines.append(line)
+    return "\n".join(lines)
 
 
 def _code_density(code: str) -> float:
@@ -101,7 +115,9 @@ def chunk_document(text: str, source: str, chunk_size: int, chunk_overlap: int) 
         if start > cursor:
             pre_text = text[cursor:start]
             if pre_text.strip() and not _is_navigation_chunk(pre_text):
-                _make_text_chunks(pre_text, source, chunks, chunk_size, chunk_overlap)
+                cleaned = _strip_navigation_lines(pre_text)
+                if cleaned.strip():
+                    _make_text_chunks(cleaned, source, chunks, chunk_size, chunk_overlap)
 
         lang = (match.group(1) or "").strip()
         code = match.group(2)
@@ -127,7 +143,9 @@ def chunk_document(text: str, source: str, chunk_size: int, chunk_overlap: int) 
 
     tail = text[cursor:]
     if tail.strip() and not _is_navigation_chunk(tail):
-        _make_text_chunks(tail, source, chunks, chunk_size, chunk_overlap)
+        cleaned = _strip_navigation_lines(tail)
+        if cleaned.strip():
+            _make_text_chunks(cleaned, source, chunks, chunk_size, chunk_overlap)
 
     return chunks
 

@@ -935,6 +935,12 @@ Be improved in order to allow changing the default openai model ?
 
 Is it better allowing to create an external .env with the OPENAI_API_KEY and the model ?
 
+____
+
+My goal is to create a test folder in my project in order to test all deterministic parts of my project (not the ones where some LLM query is involved)
+
+Is this a good idea?
+
 
 
 
