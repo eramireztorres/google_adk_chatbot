@@ -1,0 +1,92 @@
+[
+  {
+    "query": "Write a Python example that defines a custom FunctionTool with ToolContext, adds it to an LlmAgent, and shows the agent configuration (no execution).",
+    "keywords": [
+      "from google.adk.tools import FunctionTool, ToolContext",
+      "from google.adk.agents import LlmAgent",
+      "FunctionTool(",
+      "tools=["
+    ]
+  },
+  {
+    "query": "Provide Python code that configures MCPToolset with SseConnectionParams and attaches it to an LlmAgent (do not call the tool).",
+    "keywords": [
+      "from google.adk.tools.mcp_tool.mcp_toolset import MCPToolset",
+      "from google.adk.tools.mcp_tool.mcp_session_manager import SseConnectionParams",
+      "MCPToolset(",
+      "SseConnectionParams(",
+      "tools=["
+    ]
+  },
+  {
+    "query": "Give a Python example of a SequentialAgent that passes state using output_key between two LlmAgents.",
+    "keywords": [
+      "from google.adk.agents import LlmAgent, SequentialAgent",
+      "output_key=",
+      "SequentialAgent(",
+      "sub_agents=["
+    ]
+  },
+  {
+    "query": "Write Python code for a LoopAgent that uses a custom BaseAgent stop checker with EventActions(escalate=...) and two LlmAgents.",
+    "keywords": [
+      "from google.adk.agents import LoopAgent, LlmAgent, BaseAgent",
+      "from google.adk.events import Event, EventActions",
+      "LoopAgent(",
+      "EventActions(escalate"
+    ]
+  },
+  {
+    "query": "Show Python code that uses AgentTool to wrap a sub-agent and attach it to a parent LlmAgent.",
+    "keywords": [
+      "from google.adk.tools.agent_tool import AgentTool",
+      "from google.adk.agents import LlmAgent",
+      "AgentTool(",
+      "tools=["
+    ]
+  },
+  {
+    "query": "Provide a Python example of LlmAgent with input_schema and output_schema using Pydantic BaseModel (no tool calls).",
+    "keywords": [
+      "from pydantic import BaseModel",
+      "input_schema=",
+      "output_schema=",
+      "LlmAgent("
+    ]
+  },
+  {
+    "query": "Write Python code for a custom FunctionTool that accesses tool_context.state and returns a dict, then add it to an LlmAgent.",
+    "keywords": [
+      "tool_context.state",
+      "FunctionTool(",
+      "LlmAgent(",
+      "tools=["
+    ]
+  },
+  {
+    "query": "Give a Python example that creates a ParallelAgent with two LlmAgent sub-agents (no execution).",
+    "keywords": [
+      "from google.adk.agents import LlmAgent, ParallelAgent",
+      "ParallelAgent(",
+      "sub_agents=["
+    ]
+  },
+  {
+    "query": "Provide Python code showing a custom BaseAgent subclass that reads ctx.session.state and yields an Event without running any LLM.",
+    "keywords": [
+      "from google.adk.agents import BaseAgent",
+      "from google.adk.events import Event, EventActions",
+      "ctx.session.state",
+      "yield Event("
+    ]
+  },
+  {
+    "query": "Write Python code that builds an LlmAgent with a ToolContext-aware FunctionTool and a description field (no execution).",
+    "keywords": [
+      "ToolContext",
+      "FunctionTool(",
+      "LlmAgent(",
+      "description="
+    ]
+  }
+]

@@ -1,0 +1,107 @@
+[
+    {
+        "query": "Write a complete Python script to create and run a simple ADK agent named 'SimpleAgent' using the 'gpt-4.1-nano' model. The agent should have the instruction 'You are a helpful assistant.' and respond to the user message 'Hello'. Use InMemorySessionService for the session.",
+        "keywords": [
+            "from google.adk.agents import",
+            "from google.adk.sessions import",
+            "'gpt-4.1-nano'",
+            ".run_async",
+            "types.Content",
+            "asyncio.run"
+        ]
+    },
+    {
+        "query": "Create a Python script that defines a custom tool function `calculate_area(radius: int) -> dict` which returns the area of a circle. Initialize an ADK Agent with this tool and run it with the query 'Calculate area of circle with radius 5'.",
+        "keywords": [
+            "Agent(",
+            "Runner(",
+            "run_async"
+        ]
+    },
+    {
+        "query": "Write a Python script to create a SequentialAgent in ADK that chains two sub-agents: `step1_agent` and `step2_agent`. `step1_agent` should generate a topic, and `step2_agent` should write a poem about it. Run the sequential agent.",
+        "keywords": [
+            "from google.adk.agents import",
+            "sub_agents=",
+            "Agent(",
+            "Runner(",
+            "run_async"
+        ]
+    },
+    {
+        "query": "Provide a Python script that implements a ParallelAgent in ADK. It should have two sub-agents, `researcher` and `writer`, that run in parallel. Execute the parallel agent with a dummy prompt.",
+        "keywords": [
+            "from google.adk.agents import ParallelAgent",
+            "ParallelAgent",
+            "sub_agents=",
+            "Agent(",
+            "Runner(",
+            "run_async"
+        ]
+    },
+    {
+        "query": "How do I create a LoopAgent in ADK that runs a sub-agent for exactly 3 iterations? Provide a complete runnable Python script.",
+        "keywords": [
+            "from google.adk.agents import",
+            "max_iterations=3",
+            "sub_agents=[",
+            "Agent(",
+            "Runner(",
+            "run_async"
+        ]
+    },
+    {
+        "query": "Write a Python script that configures an ADK Agent with a specific `GenerateContentConfig` setting the temperature to 0.7. Run the agent with a simple prompt.",
+        "keywords": [
+            "from google.genai import",
+            "types.GenerateContentConfig",
+            "temperature=0.7",
+            "Agent(",
+            "generate_content_config=",
+            "Runner("
+        ]
+    },
+    {
+        "query": "Create a Python script that defines a `before_agent_callback` to print 'Agent Starting' before the agent runs. Attach this callback to an ADK Agent and execute it.",
+        "keywords": [
+            "CallbackContext",
+            "before_agent_callback=",
+            "Agent(",
+            "print",
+            "Runner("
+        ]
+    },
+    {
+        "query": "Write a Python script defining a custom agent class `MyCustomAgent` that inherits from `BaseAgent`. Implement the `_run_async_impl` method to yield a single text event 'Custom Run'. Run an instance of this agent.",
+        "keywords": [
+            "(BaseAgent):",
+            "async def _run_async_impl",
+            "InvocationContext",
+            "yield",
+            "Event(",
+            "Runner("
+        ]
+    },
+    {
+        "query": "Write a Python script that demonstrates how to pass data between tools in an ADK Agent using the session state `temp:` prefix. Define two tools, `write_temp` and `read_temp`, and run the agent to execute them.",
+        "keywords": [
+            "tool_context.state['temp:key']",
+            "tool_context.state.get('temp:key')",
+            "tools=[write_temp, read_temp]",
+            "ToolContext",
+            "Agent(",
+            "Runner("
+        ]
+    },
+    {
+        "query": "Create a Python script that uses `ApigeeLlm` as the model for an ADK Agent. Configure it with a proxy URL and custom headers.",
+        "keywords": [
+            "from google.adk.models import",
+            "ApigeeLlm(",
+            "proxy_url=",
+            "custom_headers=",
+            "Agent(",
+            "model="
+        ]
+    }
+]

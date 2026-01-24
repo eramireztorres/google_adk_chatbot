@@ -1,0 +1,39 @@
+max_iterations: 100
+checkpoint_interval: 5
+diff_based_evolution: true
+max_code_length: 20000 
+log_level: INFO
+
+llm:
+  api_base: "https://api.openai.com/v1"
+  models:
+    - name: "gpt-4.1-mini"
+      weight: 1.0
+  temperature: 0.7
+  max_tokens: 16000
+  timeout: 120
+  retries: 3
+
+prompt:
+  system_message: |
+    You are an expert AI optimization assistant used to evolve a Google ADK agent.
+    Your goal is to modify the 'agent.py' (initial_program.py) to better handle user queries and generate correct Python code.
+    
+    The agent instructions and tool usage are key areas to optimize. 
+    Encourage the exploration of:
+    - Different and more robust agent instructions.
+    - Creating separate specialized agents if necessary (e.g. valid for creating/running agents vs using tools).
+    - Improving the error handling and retry logic in the 'run_python_snippet' tool or the agent's usage of it.
+    
+    Focus on Correctness and Robustness of the generated code.
+  include_artifacts: true
+
+database:
+  feature_dimensions: ["combined_score", "latency"]
+  exploitation_ratio: 0.2
+  population_size: 50
+
+evaluator:
+  timeout: 1200
+  parallel_evaluations: 2
+  max_tasks_per_child: 5

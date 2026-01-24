@@ -1365,9 +1365,1060 @@ Your tasks are:
 
 2- Add logging to my agent team so we can diagnose better where the workflow is failing
 
+____
+
+
+Explain to me how can I use a FunctionTool in a google ADK agent
+
+_
+
+I've studied the file
+
+/home/erick/repo/google_adk_chatbot/chatbot/logs/adk.log
+
+But still I cannot understand why the root_agent is not giving an answer to the user after the query
+
+Explain to me how can I use a FunctionTool in a google ADK agent
+
+Is it he has not understand its role completely in hes instruction here
+
+/home/erick/repo/google_adk_chatbot/chatbot/ADK_assistant/agents/coordinator.py
+
+and he thinks calling rag_tool is enough ? Or is it a more complicated problem related with no receiving the RAG answer ?
+
+
+____
+
+Now it gives a good answer for  query:
+
+Explain to me how can I use a FunctionTool in a google ADK agent
+
+and, after that I tried:
+
+How can I call a MCP server in an agent ?
+
+And it answered:
+
+Could you please clarify what you mean by MCP server? If you mean a specific server or API, please provide more details. Alternatively, if you want to know how to make external server or API calls from within a Google ADK agent, I can provide guidance on that as well.
+
+
+But mcp is present indeed in docs
+
+Your tasks are:
+
+1- Read the tail from
+
+/home/erick/repo/google_adk_chatbot/chatbot/logs/adk.log
+
+2- Give me your best theory about what that query failed
+
+____
+
+I cannot find a snippet here
+
+/home/erick/repo/google_adk_chatbot/chatbot/logs/adk.log
+
+that supports your claim
+
+"The tool itself can answer MCP questions (your RAG response shows that), but the coordinator’s classification is too cautious. This is a routing policy issue, not a RAG failure."
+
+Where is the good RAG answer to the MCP query ?
 
 
 
 
 
+____
+
+Explain to me how can I use a FunctionTool in a google ADK agent
+How can I call a MCP server in an agent ?
+
+____
+
+
+Do you think the keywords that could raise this problem are only ADK and MCP or there are more? Study docs in here for this:
+
+
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs
+
+and give me an even more robust guardrails
+
+____
+
+Explain to me how can I use a FunctionTool in a google ADK agent
+How can I call a MCP server in an agent ?
+
+____
+
+Now when try the query:
+
+How can I call a MCP server in an agent ?
+
+The coordinator was never able to give a good python-code answer to the user
+
+Study carefully what happened here
+
+/home/erick/repo/google_adk_chatbot/chatbot/logs/adk.log
+
+
+____
+Now when try the query:
+
+How can I call a MCP server in an agent ?
+
+It returns code that hallucinates:
+
+from google_adk import Agent, MCPToolset
+Traceback (most recent call last):
+  File "<python-input-1>", line 1, in <module>
+    from google_adk import Agent, MCPToolset
+ModuleNotFoundError: No module named 'google_adk'
+
+
+Your tasks are:
+
+1- Check here where the problem is
+
+/home/erick/repo/google_adk_chatbot/chatbot/logs/adk.log
+/home/erick/repo/google_adk_chatbot/chatbot/logs/adk.log.1
+
+2- Is it possible the RagLoop executes imports before delivering any python code ?
+
+____
+
+I think is even worse now. Check the tail of
+
+/home/erick/repo/google_adk_chatbot/chatbot/logs/adk.log
+
+_____
+
+Your tasks are:
+
+1- Study docs in
+
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs
+
+2- Elaborate 10 interesting questions I can ask the coordinator in order to test him. Ensure all of them require pythoncode in the response
+
+____
+
+
+  1. “Show me a Python example of an ADK LlmAgent that uses MCPToolset with SseConnectionParams to connect to a remote MCP server.”
+  2. “Give me a Python example that builds a SequentialAgent pipeline with two sub‑agents and passes data between them using output_key.”
+  3. “Provide Python code for a LoopAgent that refines a query up to 3 iterations, using one agent to query and another to critique.”
+  4. “Write a Python example that defines a custom FunctionTool with ToolContext, adds it to an LlmAgent, and calls it.”
+  5. “Show Python code that uses generate_content_config to set temperature and response schema in an ADK agent.”
+  6. “Give a Python example of wiring before_model_callback and after_model_callback to log requests and responses.”
+  7. “Provide a Python snippet that creates an ADK agent and enables code execution with a built‑in code executor.”
+  8. “Show Python code that defines an ADK agent with MCPToolset using StdioConnectionParams to run an MCP server via npx.”
+  9. “Give Python code for an ADK agent that uses include_contents='none' and stores intermediate state in the session.”
+  10. “Provide a Python example that configures a simple ADK agent and runs it with a Runner (session creation + run).”
+
+
+
+_____
+It hallucinated with this one:
+
+  3. “Provide Python code for a LoopAgent that refines a query up to 3 iterations, using one agent to query and another to critique.”
+
+Returning
+
+from google.adk.agents import LlmAgent, LoopAgent, StopOnCritiqueStop
+Traceback (most recent call last):
+  File "<python-input-8>", line 1, in <module>
+    from google.adk.agents import LlmAgent, LoopAgent, StopOnCritiqueStop
+ImportError: cannot import name 'StopOnCritiqueStop' from 'google.adk.agents' (/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/google/adk/agents/__init__.py)
+
+
+your task is to study the tail of
+
+/home/erick/repo/google_adk_chatbot/chatbot/logs/adk.log
+
+Adn give me the cause for this hallucination
+
+
+____
+
+
+The current version seems to return several different answers for a single query:
+
+"Provide Python code for a LoopAgent that refines a query up to 3 iterations, using one agent to query and another to critique."
+
+
+Study logs  here
+
+/home/erick/repo/google_adk_chatbot/chatbot/logs/adk.log
+
+and Investigate why is this happening
+
+____
+
+Your tasks are:
+
+1- Study here how correclty to use escalate to break a loop
+
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-agents-workflow-agents-loop-agents.md
+
+2- Implement the most robust fix for my loop
+
+____
+
+It is still repeating iterations and showing them to user in adk web
+
+Check here what is happening
+
+/home/erick/repo/google_adk_chatbot/chatbot/logs/adk.log
+
+Could it be related to the coordinator acting only as a router and not really chatting to user ?
+
+_
+
+
+I think that if an adequate arquitecture is used, there is no need for suppress_output callback, because the root_agent would call tools when needed and answer to the user exactly what he wants, not the whole loop.
+
+Your tasks are:
+
+1- Revisit docs in
+
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-agents.md
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-agents-config.md
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-agents-custom-agents.md
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-agents-llm-agents.md
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-agents-models.md
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-agents-multi-agents.md
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-agents-workflow-agents.md
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-agents-workflow-agents-loop-agents.md
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-agents-workflow-agents-parallel-agents.md
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-agents-workflow-agents-sequential-agents.md
+
+2- Think carefully about the adequate and robust fixing my team needs
+
+__
+
+
+I think coordinator instruction here
+
+/home/erick/repo/google_adk_chatbot/chatbot/ADK_assistant/agents/coordinator.py
+
+Should be improved, so he talks nicely to the user and tries to answer its query when he is sure about the answer. Do you agree or this has any cons?
+
+_
+
+Can we move the logs folder creation to inside
+
+/home/erick/repo/google_adk_chatbot/chatbot/ADK_assistant
+
+instead of
+
+
+/home/erick/repo/google_adk_chatbot/chatbot?
+
+
+____
+
+
+  1. “Show me a Python example of an ADK LlmAgent that uses MCPToolset with SseConnectionParams to connect to a remote MCP server.”
+  2. “Give me a Python example that builds a SequentialAgent pipeline with two sub‑agents and passes data between them using output_key.”
+  3. “Provide Python code for a LoopAgent that refines a query up to 3 iterations, using one agent to query and another to critique.”
+  4. “Write a Python example that defines a custom FunctionTool with ToolContext, adds it to an LlmAgent, and calls it.”
+  5. “Show Python code that uses generate_content_config to set temperature and response schema in an ADK agent.”
+  6. “Give a Python example of wiring before_model_callback and after_model_callback to log requests and responses.”
+  7. “Provide a Python snippet that creates an ADK agent and enables code execution with a built‑in code executor.”
+  8. “Show Python code that defines an ADK agent with MCPToolset using StdioConnectionParams to run an MCP server via npx.”
+  9. “Give Python code for an ADK agent that uses include_contents='none' and stores intermediate state in the session.”
+  10. “Provide a Python example that configures a simple ADK agent and runs it with a Runner (session creation + run).”
+
+
+__
+
+
+It hallucinated the answer for this query:
+
+"Give me a Python example that builds a SequentialAgent pipeline with two sub‑agents and passes data between them using output_key."
+
+Traceback (most recent call last):
+  File "<python-input-15>", line 2, in <module>
+    from google.adk.session import Session
+ModuleNotFoundError: No module named 'google.adk.session'
+
+
+Investigate here where did the process fail
+
+/home/erick/repo/google_adk_chatbot/chatbot/ADK_assistant/logs/adk.log
+
+____
+
+Now coordinator answers:
+
+"The example I found is in Java, illustrating a SequentialAgent pipeline with two sub-agents passing data via output_key, managing state in session. It configures each sub-agent with outputKey, so its output is saved in session state accessible to the next agent.
+
+If you want, I can help generate a similar Python example for you. Would you like me to do that?"
+
+Check here why did it happen
+
+/home/erick/repo/google_adk_chatbot/chatbot/ADK_assistant/logs/adk.log
+
+
+____
+
+
+I think that:
+
+1- that guardrail should be improved
+2- It should be used as before agent callback, not before model callback.
+
+Do you agree ?
+
+
+______________________________________
+
+
+It hallucinated for this query:
+
+"Write a Python example that defines a custom FunctionTool with ToolContext, adds it to an LlmAgent, and calls it"
+
+It included the import:
+
+from google.adk.tools.mcp_tools import MCPToolset
+
+which raises:
+
+Traceback (most recent call last):
+  File "<python-input-2>", line 3, in <module>
+    from google.adk.tools.mcp_tools import MCPToolset
+ModuleNotFoundError: No module named 'google.adk.tools.mcp_tools'
+
+Also it returned a code that makes no sense:
+
+
+# Define your custom function with ToolContext
+def my_authenticated_tool(param1: str, tool_context: ToolContext) -> dict:
+    """
+    Example authenticated tool function.
+    Args:
+        param1: input parameter
+        tool_context: provides context and environment info
+    Returns:
+        dict with status and result
+    """
+    # Your custom logic here, e.g., authentication checks using tool_context
+    # For illustration, just echo param1
+    return {"status": "success", "echo": param1}
+
+# Wrap the function as a FunctionTool
+my_tool = FunctionTool(func=my_authenticated_tool)
+
+# Create an MCPToolset and add your custom tool
+my_toolset = MCPToolset(tools=[my_tool])
+
+Because it tried to pass the custom tool to the MCPToolset (It should be to the Toolset or even directly to the agent better)
+
+Your tasks are:
+
+1- Read the tail of
+
+/home/erick/repo/google_adk_chatbot/chatbot/ADK_assistant/logs/adk.log
+
+2- Investigate why the import check tool failed.
+3- Evaluate carefully these ideas:
+
+- Improve the import check tool and the step where it is called
+- Improve the instruction of rag_query_agent and /or rag_critic_agent in
+
+/home/erick/repo/google_adk_chatbot/chatbot/ADK_assistant/agents/rag_qa.py
+
+to encourage split the query in subqueries  and call MCP server more than once (if needed). The idea is this is not a GraphRag, and relations could be hard to retrieve in one query
+
+Tell me your opinion
+
+____
+
+Implement 1 but with maximum tries to avoid infinite loops. Revisit here if needed
+
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-agents-workflow-agents-loop-agents.md
+
+Implement 2
+
+
+____
+
+
+Somehow, the code returned is even worse now:
+
+COORDINATOR RESPONSE:
+
+Here's a Python example:
+
+Define a custom FunctionTool as a Python function taking ToolContext and returning a dict with a status key:
+from google.adk.tools import FunctionTool, ToolContext
+
+def my_authenticated_tool_function(param1: str, tool_context: ToolContext) -> dict:
+    # Access or modify state via tool_context.state if needed
+    value = tool_context.state.get('some_key', 'default_value')
+    # Your logic here
+    return {"status": "success", "data": value}
+
+my_tool = FunctionTool(func=my_authenticated_tool_function, name="my_authenticated_tool")
+Add this FunctionTool to an LlmAgent (passing the native function directly):
+from google.adk.agents.llm_agent import LlmAgent
+
+my_agent = LlmAgent.builder() \
+    .model("gemini-2.0-flash") \
+    .name("my_agent") \
+    .description("Agent with a custom FunctionTool") \
+    .instruction("Use the provided tool to perform custom actions.") \
+    .tools(my_authenticated_tool_function) \
+    .build()
+Call the FunctionTool via the agent:
+result = my_agent.run("Call my_authenticated_tool with param1='example_value'")
+print(result)
+The LlmAgent recognizes the tool name, calls your FunctionTool with ToolContext, and returns its output. Let me know if you want help triggering the tool from user input or processing outputs.
+
+RESPONSE END
+
+Because, even imports are OK, the remaining signatures are wrong:
+
+>>> my_tool = FunctionTool(func=my_authenticated_tool_function, name="my_authenticated_tool")
+Traceback (most recent call last):
+  File "<python-input-6>", line 1, in <module>
+    my_tool = FunctionTool(func=my_authenticated_tool_function, name="my_authenticated_tool")
+TypeError: FunctionTool.__init__() got an unexpected keyword argument 'name'
+>>> my_agent = LlmAgent.builder() \
+...     .model("gemini-2.0-flash") \
+...     .name("my_agent") \
+...     .description("Agent with a custom FunctionTool") \
+...     .instruction("Use the provided tool to perform custom actions.") \
+...     .tools(my_authenticated_tool_function) \
+...     .build()
+Traceback (most recent call last):
+  File "<python-input-7>", line 1, in <module>
+    my_agent = LlmAgent.builder() \
+               ^^^^^^^^^^^^^^^^
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/pydantic/_internal/_model_construction.py", line 289, in __getattr__
+    raise AttributeError(item)
+AttributeError: builder
+
+Check carefully here what failed:
+
+/home/erick/repo/google_adk_chatbot/chatbot/ADK_assistant/logs/adk.log
+
+
+____
+
+
+Your suggestion
+
+ - detecting “Python example” / “FunctionTool” / “ToolContext”
+
+
+Is too overfitted and hardcoded to the current-query solution
+
+Your tasks are:
+
+1- Evaluate the following idea:
+
+- The coordinator is an agent that only has two options:
+
+One is to search in adequate values of InvocationContext and check if user query is related to current-session history and there is no need to call the tool
+Two is calling the unique tool it has: which is a deterministic BaseAgent that calls a Router agent (with several ADK keywords and regex patterns) that decide which path to follow
+
+to evaluate this idea please study these:
+
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-agents-custom-agents.md
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-types-cheatsheet.md
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/google-adk-types-cheatsheet.
+
+If you think the idea is not good enough, then suggest the most robust solution possible to complete remove hallucinations
+
+____
+
+
+The problem I see with Coordinator as custom BaseAgent (no LLM) is that root_agent will not be able to have a natural chat with the user at all. No matter how deterministic we want to
+  make this workflow, the root_agent has to be LLM or the chatbot performance will be very poor.
+
+We should use deterministic BaseAgent only when it is completely necesary
+
+Maybe the solution is in callbacks of the root agent and/or some other
+
+Your tasks are:
+
+1- Revisit docs
+
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-agents.md
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-agents-config.md
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-agents-custom-agents.md
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-agents-llm-agents.md
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-agents-models.md
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-agents-multi-agents.md
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-agents-workflow-agents.md
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-agents-workflow-agents-loop-agents.md
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-agents-workflow-agents-parallel-agents.md
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-agents-workflow-agents-sequential-agents.md
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-callbacks.md
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-callbacks-design-patterns-and-best-practices.md
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-callbacks-types-of-callbacks.md
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-types-cheatsheet.md
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/google-adk-types-cheatsheet.
+
+
+2- Give me the most robust and strong solution with the best possible trade-off between:
+zero hallucinations / natural chat with user
+
+
+____
+
+
+  1. “Show me a Python example of an ADK LlmAgent that uses MCPToolset with SseConnectionParams to connect to a remote MCP server.”
+  2. “Give me a Python example that builds a SequentialAgent pipeline with two sub‑agents and passes data between them using output_key.”
+  3. “Provide Python code for a LoopAgent that refines a query up to 3 iterations, using one agent to query and another to critique.”
+  4. “Write a Python example that defines a custom FunctionTool with ToolContext, adds it to an LlmAgent, and calls it.”
+  5. “Show Python code that uses generate_content_config to set temperature and response schema in an ADK agent.”
+  6. “Give a Python example of wiring before_model_callback and after_model_callback to log requests and responses.”
+  7. “Provide a Python snippet that creates an ADK agent and enables code execution with a built‑in code executor.”
+  8. “Show Python code that defines an ADK agent with MCPToolset using StdioConnectionParams to run an MCP server via npx.”
+  9. “Give Python code for an ADK agent that uses include_contents='none' and stores intermediate state in the session.”
+  10. “Provide a Python example that configures a simple ADK agent and runs it with a Runner (session creation + run).”
+
+
+__
+
+The error remains. Study the error here
+
+/home/erick/repo/google_adk_chatbot/chatbot/ADK_assistant/logs/adk.log
+
+and give a robust solution
+
+____
+
+A new error raised.
+
+Study it here
+
+/home/erick/repo/google_adk_chatbot/chatbot/ADK_assistant/logs/adk.log
+
+_
+
+I think we are overthinking this
+
+My goal is to create a new google adk agent team from scratch that uses the RAG MCP server
+
+For this:
+
+- I want to create a single script
+
+/home/erick/repo/google_adk_chatbot/chatbot/ADK_assistant/agent
+
+
+that contains all the code: root agent, sub agents, tools and callbacks
+
+We will separate them later when all works fine
+
+- The root agent has only 2 tools, both  using agents as tools with AgentTool, as in
+
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-tools-built-in-tools.md
+
+- It has no subagents
+- The first agent used as tool is the one who has access to RAG MCP server and that is its unique tool.
+Its instruction encourages him to split the query in subqueries and call the tool more than once before giving an answer
+
+- The second agent is a python-code checker, which has only one tool that allows him to run python code in current environment. In it its instructions he is encouraged to test imports and small code snippets that can be easily tested without running the whole code, like instanciations of imported classes.
+
+- The root-agent instructions encourage him to use the first tool for every user query, use the second tool if the query require code, and call again the first tool if the code raises some error, but reformulating the query.
+
+Your tasks are:
+
+1- Evaluate my idea
+2- Improve it without over complicating it
+3- Implement it
+
+
+____
+
+
+  1. “Show me a Python example of an ADK LlmAgent that uses MCPToolset with SseConnectionParams to connect to a remote MCP server.”
+  2. “Give me a Python example that builds a SequentialAgent pipeline with two sub‑agents and passes data between them using output_key.”
+  3. “Provide Python code for a LoopAgent that refines a query up to 3 iterations, using one agent to query and another to critique.”
+  4. “Write a Python example that defines a custom FunctionTool with ToolContext, adds it to an LlmAgent, and calls it.”
+  5. “Show Python code that uses generate_content_config to set temperature and response schema in an ADK agent.”
+  6. “Give a Python example of wiring before_model_callback and after_model_callback to log requests and responses.”
+  7. “Provide a Python snippet that creates an ADK agent and enables code execution with a built‑in code executor.”
+  8. “Show Python code that defines an ADK agent with MCPToolset using StdioConnectionParams to run an MCP server via npx.”
+  9. “Give Python code for an ADK agent that uses include_contents='none' and stores intermediate state in the session.”
+  10. “Provide a Python example that configures a simple ADK agent and runs it with a Runner (session creation + run).”
+
+______________________________________
+
+I tried the query
+
+"Write a Python example that defines a custom FunctionTool with ToolContext, adds it to an LlmAgent, and calls it"
+
+And it returned a code that is almost OK but has a final hallucination:
+
+from google.adk.tools import FunctionTool, ToolContext
+from google.adk.agents import LlmAgent
+
+# Define your custom function that accepts ToolContext
+def my_custom_tool_function(param1: str, tool_context: ToolContext) -> dict:
+    result = f"Received param1: {param1}"
+    return {"result": result}
+
+# Wrap the function into a FunctionTool
+my_tool = FunctionTool(func=my_custom_tool_function)
+
+# Create an LlmAgent and add the custom tool
+agent = LlmAgent(
+    name="MyAgent",
+    model="gemini-2.0-flash",
+    tools=[my_tool],
+)
+
+# Example call to the agent that triggers the tool
+response = agent.chat("Call my_custom_tool_function with param1='Hello'")
+print(response)
+
+Traceback (most recent call last):
+  File "<python-input-0>", line 20, in <module>
+    response = agent.chat("Call my_custom_tool_function with param1='Hello'")
+               ^^^^^^^^^^
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/pydantic/main.py", line 1026, in __getattr__
+    raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+AttributeError: 'LlmAgent' object has no attribute 'chat'
+
+My idea is:
+
+Adding some general improvement in instruction of
+RagAgent    and/or    CodeCheckAgent
+to prevent hallucinations about basic topics of google ADK
+
+The first one should be related to avoid wrong patterns like
+agent.run agent.chat agent.invoke etc and use the correct Runner abstraction as in
+
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-agents-custom-agents.md
+
+Your tasks are:
+
+1- What do you think about increasing agents with general google-adk skills in their instructions ?
+2- Which agent is best for this: RagAgent    and/or    CodeCheckAgent  ?
+
+_____
+
+
+The answer for the query
+
+"Write a Python example that defines a custom FunctionTool with ToolContext, adds it to an LlmAgent, and calls it"
+
+Has no code error but it is poor:
+
+from google.adk.tools import FunctionTool, ToolContext
+from google.adk.agents.llm_agent import LlmAgent
+
+# Define your custom tool function with a ToolContext parameter
+def my_custom_tool(param1: str, tool_context: ToolContext) -> dict:
+    # Your tool logic here, e.g., use tool_context for context-aware operations
+    result = {"message": f"Received param1: {param1}"}
+    return result
+
+# Wrap the function into a FunctionTool
+my_tool = FunctionTool(func=my_custom_tool)
+
+# Create an LlmAgent and add the custom tool
+agent = LlmAgent(
+    model='gemini-2.0-flash',
+    name='my_agent',
+    instruction="Use the custom tool to process requests",
+    tools=[my_tool],
+)
+
+
+Because it did not show how to use ToolContext
+
+Then I did a follow query:
+
+Give me an example of how to use tool_context for context-aware operations
+
+and it hallucinated a bit:
+
+from google.adk.tools import FunctionTool, ToolContext
+
+def my_context_aware_tool(param1: str, tool_context: ToolContext) -> dict:
+    # Access tool_context features like function_call_id or actions
+    call_id = tool_context.function_call_id
+
+    # You can also perform advanced operations, e.g., authentication or memory search
+    # creds = tool_context.get_auth_response(auth_config)
+    # results = tool_context.search_memory("some query")
+
+    # Your custom logic using param1 and tool_context
+    return {
+        "param_received": param1,
+        "call_id": call_id,
+        # Add more context-aware info as needed
+    }
+
+my_tool = FunctionTool(func=my_context_aware_tool, name="my_context_aware_tool")
+
+Traceback (most recent call last):
+  File "<python-input-4>", line 18, in <module>
+    my_tool = FunctionTool(func=my_context_aware_tool, name="my_context_aware_tool")
+TypeError: FunctionTool.__init__() got an unexpected keyword argument 'name'
+
+
+I am considering the following idea:
+
+1- Give the root_agent a tool to run python code
+2- Add instructions to root_agent to test code snippets before delivering answer to the user
+3- Remove code CodeCheckAgent at all
+
+Evaluate carefully pros and cons of this idea.
+Give the most robust solution (you can think about callbacks if needed)
+
+____
+Is it better replacing this
+
+“If the user asked for code, you must run a minimal import/instantiation check before answering.”
+
+with something like
+
+"If the RagAgent returns python code ..."
+
+and also encouraging RagAgent in its instructions to return python code whenever is possible ?
+____
+
+
+  1. “Show me a Python example of an ADK LlmAgent that uses MCPToolset with SseConnectionParams to connect to a remote MCP server.”
+  2. “Give me a Python example that builds a SequentialAgent pipeline with two sub‑agents and passes data between them using output_key.”
+  3. “Provide Python code for a LoopAgent that refines a query up to 3 iterations, using one agent to query and another to critique.”
+  4. “Write a Python example that defines a custom FunctionTool with ToolContext, adds it to an LlmAgent, and calls it.”
+  5. “Show Python code that uses generate_content_config to set temperature and response schema in an ADK agent.”
+  6. “Give a Python example of wiring before_model_callback and after_model_callback to log requests and responses.”
+  7. “Provide a Python snippet that creates an ADK agent and enables code execution with a built‑in code executor.”
+  8. “Show Python code that defines an ADK agent with MCPToolset using StdioConnectionParams to run an MCP server via npx.”
+  9. “Give Python code for an ADK agent that uses include_contents='none' and stores intermediate state in the session.”
+  10. “Provide a Python example that configures a simple ADK agent and runs it with a Runner (session creation + run).”
+
+______
+
+Now the query
+
+Write a Python example that defines a custom FunctionTool with ToolContext, adds it to an LlmAgent, and calls it.
+
+returns a python code that runs OK:
+
+from google.adk.tools import FunctionTool, ToolContext
+from google.adk.agents.llm_agent import LlmAgent
+
+# Define your custom tool function with ToolContext parameter
+def my_custom_tool(param1: str, tool_context: ToolContext) -> dict:
+    """
+    Example custom tool that uses ToolContext.
+    """
+    # Your logic here, e.g., access tool_context for additional info
+    result = {"message": f"Received param1: {param1}"}
+    return result
+
+# Wrap the function into a FunctionTool
+my_tool = FunctionTool(func=my_custom_tool)
+
+# Create an LlmAgent and add the custom tool
+agent = LlmAgent(
+    model='gemini-2.0-flash',
+    name='custom_agent',
+    instruction="Use the custom tool to process requests",
+    tools=[my_tool],
+)
+
+But it includes a comment with hallucinations:
+
+
+# Example of calling the agent (conceptual)
+# response = agent.chat("Call my_custom_tool with param1='hello'")
+# print(response)
+
+Since it is commented, it passes the check_tool, but it is still bad response
+
+I am thinking:
+
+1- adding an after agent callback to root_agent that removes every commented code
+2- Improve root agent instructions to avoid this
+3- Other ?
+
+Which one is better ?
+
+____
+
+from google.adk.tools import FunctionTool, ToolContext
+from google.adk.agents import LlmAgent
+
+def my_custom_tool(param: str, tool_context: ToolContext) -> dict:
+    previous = tool_context.state.get('previous', 'none')
+    tool_context.state['last_param'] = param
+    return {"status": "success", "previous": previous, "current": param}
+
+custom_tool = FunctionTool(func=my_custom_tool, name="my_custom_tool")
+
+agent = LlmAgent(
+    model="gemini-2.0-flash",
+    name="example_agent",
+     description="Agent with a custom function tool",
+    instruction="Use the custom function tool to process inputs.",
+    tools=[custom_tool],
+ )
+
+result = custom_tool.run(param="test input", tool_context=ToolContext(state={}))
+print(result)
+
+Traceback (most recent call last):
+  File "<python-input-2>", line 9, in <module>
+    custom_tool = FunctionTool(func=my_custom_tool, name="my_custom_tool")
+TypeError: FunctionTool.__init__() got an unexpected keyword argument 'name'
+
+
+This seems to me easy to test and it should not pass the check_tool, why is this returned by root_agent ? Does the check_tool only runs imports and not other signatures ?
+Investigate here what happened and who made the mistake:
+
+/home/erick/repo/google_adk_chatbot/console_response.txt
+
+____
+I Think this solution
+
+  2. Switch RootAgent to a tiny deterministic loop in the same file (still one script), where you explicitly:
+      - call RagAgent
+      - call run_python_snippet if code found
+      - if failure: re‑call RagAgent
+      - else: return result
+
+
+Would be better but with the following changes:
+
+- Replace the check_tool with a new agent that uses the check_tool
+
+- Create a loop agent that calls rag_agent and check agent N times and escalates when the code gives no error
+- use only one tool in root_agent that is the loop agent as tool (using AgentTool)
+- Modify instructions accordingly
+
+Your tasks are:
+
+1- Revisit docs in
+
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-agents-workflow-agents-loop-agents.md
+
+2- Evaluate pros and cons of my idea
+
+____
+
+
+  1. “Show me a Python example of an ADK LlmAgent that uses MCPToolset with SseConnectionParams to connect to a remote MCP server.”
+  2. “Give me a Python example that builds a SequentialAgent pipeline with two sub‑agents and passes data between them using output_key.”
+  3. “Provide Python code for a LoopAgent that refines a query up to 3 iterations, using one agent to query and another to critique.”
+  4. “Write a Python example that defines a custom FunctionTool with ToolContext and adds it to an LlmAgent”
+  5. “Show Python code that uses generate_content_config to set temperature and response schema in an ADK agent.”
+  6. “Give a Python example of wiring before_model_callback and after_model_callback to log requests and responses.”
+  7. “Provide a Python snippet that creates an ADK agent and enables code execution with a built‑in code executor.”
+  8. “Show Python code that defines an ADK agent with MCPToolset using StdioConnectionParams to run an MCP server via npx.”
+  9. “Give Python code for an ADK agent that uses include_contents='none' and stores intermediate state in the session.”
+  10. “Provide a Python example that configures a simple ADK agent and runs it with a Runner (session creation + run).”
+
+____
+
+It hallucinated:
+
+Traceback (most recent call last):
+  File "<python-input-3>", line 3, in <module>
+    from google.adk.agents.tool_context import ToolContext
+ModuleNotFoundError: No module named 'google.adk.agents.tool_context'
+
+Even bad imports !
+
+Check here who failed:
+
+/home/erick/repo/google_adk_chatbot/console_response.txt
+
+____
+Remember I do not want the
+
+root_agent to be deterministic so he can have a natural chat with user
+
+Your tasks are:
+
+1- Study callbacks
+
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-callbacks.md
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-callbacks-design-patterns-and-best-practices.md
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-callbacks-types-of-callbacks.md
+
+2- Think carefully what type of callback can be implemented to ensure no wrong code is delivered to user and encourages root agent to reformulate query
+
+____
+
+This arquitecture is giving awful results.
+Are you able to rollback to the arquitecture with no loop agents but a root agent using more than one tool (including an AgentTool) when needed ?
+
+____
+Your tasks are:
+
+1- Study general adk docs in
+
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs
+
+2- Write a new json file  with ten entries with good test queries for a RAG system that
+
+- Require python code in their response
+- The python code expected is to be run complete in environment
+
+/home/erick/repo/google_adk_chatbot/venv
+
+without raising any error, or admitting only errors related to missing api keys
+- each entry should include the query and a list of keywords the response should include, otherwise the code is wrong
+
+_____
+
+@openevolve-experiment
+
+My goal is to create a openevolve experiment with initial program
+
+/home/erick/repo/google_adk_chatbot/chatbot/ADK_assistant/agent.py
+
+The evaluator Should import the root_agent
+
+and run with Runner pattern (see /home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-agents-custom-agents.md for example)
+
+each query in
+
+/home/erick/repo/google_adk_chatbot/chatbot/ADK_assistant/rag_test_queries.json
+
+and
+
+- Extracts the python-code snippet from each response (you have to build the function for this)
+- Runs the python snippet with environment /home/erick/repo/google_adk_chatbot/venv (you have to build the function for this)
+- Gives good partial score if the code runs with no errors
+- Gives good partial score if the code contains the keywords in
+/home/erick/repo/google_adk_chatbot/chatbot/ADK_assistant/rag_test_queries.json
+for each query
+- Penalizes a bit long latency
+- Create the combined_score with partial scores and penalties
+
+The config.yaml should use
+
+diff_based_evolution: true
+
+include_artifacts: true
+
+A system message that encourages the LLM to explore:
+
+- different agent instructions
+- create/remove agents
+
+Create the experiment here
+
+/home/erick/repo/google_adk_chatbot/chatbot/ADK_assistant/openevolve_experiments
+
+____
+
+
+I forgot important things:
+
+both the initial and evolve programs require to have in the environment
+
+the values
+
+OPENAI_API_KEY=...
+OPENAI_LLM_MODEL=gpt-4.1-mini
+OPENAI_EMBEDDING_MODEL=text-embedding-3-small
+
+ADK_LLM_PROVIDER=openai
+ADK_LLM_MODEL=gpt-4.1-mini
+
+GOOGLE_API_KEY=...
+GOOGLE_GENAI_USE_VERTEXAI=FALSE
+
+that are in
+
+/home/erick/repo/google_adk_chatbot/chatbot/ADK_assistant/openevolve_experiments/.env
+
+both the initial and evolve programs require previous run of the MCP server run in
+
+/home/erick/repo/google_adk_chatbot/rag/run_adk_mcp_server.py
+
+Think carefully how to fix both
+
+____
+
+
+openevolve-run /home/erick/repo/google_adk_chatbot/chatbot/ADK_assistant/openevolve_experiments/initial_program.py \
+/home/erick/repo/google_adk_chatbot/chatbot/ADK_assistant/openevolve_experiments/evaluator.py \
+--config /home/erick/repo/google_adk_chatbot/chatbot/ADK_assistant/openevolve_experiments/config.yaml \
+--iterations 1
+
+____
+
+The single run
+
+openevolve-run /home/erick/repo/google_adk_chatbot/chatbot/ADK_assistant/openevolve_experiments/initial_program.py \
+/home/erick/repo/google_adk_chatbot/chatbot/ADK_assistant/openevolve_experiments/evaluator.py \
+--config /home/erick/repo/google_adk_chatbot/chatbot/ADK_assistant/openevolve_experiments/config.yaml \
+--iterations 1
+
+completely failed
+
+
+I think it might be related to some google-adk mandatory configs that we are missing, both in initial and evolved programs
+
+Your task is to study
+
+/home/erick/repo/google_adk_chatbot/chatbot/ADK_assistant/openevolve_experiments/openevolve_output/logs/openevolve_20260124_223207.log
+
+and give me your best theory of what is failing
+
+_
+
+Your tasks are:
+
+1- Study recent-run errors in
+
+/home/erick/repo/google_adk_chatbot/chatbot/ADK_assistant/openevolve_experiments/openevolve_output/logs/openevolve_20260124_223759.log
+
+2- Explore google ADK docs in
+
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs
+
+for the best solution for these errors
+____
+
+The single run
+
+openevolve-run /home/erick/repo/google_adk_chatbot/chatbot/ADK_assistant/openevolve_experiments/initial_program.py \
+/home/erick/repo/google_adk_chatbot/chatbot/ADK_assistant/openevolve_experiments/evaluator.py \
+--config /home/erick/repo/google_adk_chatbot/chatbot/ADK_assistant/openevolve_experiments/config.yaml \
+--iterations 1
+
+completely failed again
+
+
+I think it might be related to some google-adk mandatory configs that we are missing, both in initial and evolved programs, or MCP server errors
+
+Your task is to study
+
+/home/erick/repo/google_adk_chatbot/chatbot/ADK_assistant/openevolve_experiments/openevolve_output/logs/openevolve_20260124_224904.log
+
+and give me your best theory of what is failing
+
+____
+
+As you can see here:
+
+/home/erick/repo/google_adk_chatbot/chatbot/ADK_assistant/openevolve_experiments/openevolve_output/logs/openevolve_20260124_224904.log
+
+the experiment is not able to get metrics even from initial program when I run
+
+openevolve-run /home/erick/repo/google_adk_chatbot/chatbot/ADK_assistant/openevolve_experiments/initial_program.py \
+/home/erick/repo/google_adk_chatbot/chatbot/ADK_assistant/openevolve_experiments/evaluator.py \
+--config /home/erick/repo/google_adk_chatbot/chatbot/ADK_assistant/openevolve_experiments/config.yaml \
+--iterations 1
+
+You tasks are:
+
+1- Write a new script that only tries to evaluate the initial program with evaluator
+2- run it with environment
+/home/erick/repo/google_adk_chatbot/venv
+3- Give me conclusions about messages printed after run
 
