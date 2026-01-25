@@ -2422,3 +2422,21 @@ You tasks are:
 /home/erick/repo/google_adk_chatbot/venv
 3- Give me conclusions about messages printed after run
 
+__
+
+A trial with
+
+openevolve-run /home/erick/repo/google_adk_chatbot/chatbot/ADK_assistant/openevolve_experiments/initial_program.py /home/erick/repo/google_adk_chatbot/chatbot/ADK_assistant/openevolve_experiments/evaluator.py --config /home/erick/repo/google_adk_chatbot/chatbot/ADK_assistant/openevolve_experiments/config.yaml --iterations 5
+
+
+failed.
+Investigate here why:
+
+/home/erick/repo/google_adk_chatbot/chatbot/ADK_assistant/openevolve_experiments/openevolve_output/logs/openevolve_20260124_235912.log
+
+____
+
+Pick the best ones and reduce to 6 entries in
+
+/home/erick/repo/google_adk_chatbot/chatbot/ADK_assistant/rag_test_queries.json
+

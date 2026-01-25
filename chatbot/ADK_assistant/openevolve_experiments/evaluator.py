@@ -183,6 +183,16 @@ def evaluate(program_path: str) -> Dict[str, Any]:
                 "keyword_match": keyword_score
             })
             
+        # Cleanup pending tasks to avoid "Task was destroyed" errors
+        try:
+            pending = asyncio.all_tasks(loop)
+            if pending:
+                for task in pending:
+                    task.cancel()
+                loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
+        except Exception:
+            pass # Ignore errors during cleanup
+            
         loop.close()
 
         if valid_cases == 0:

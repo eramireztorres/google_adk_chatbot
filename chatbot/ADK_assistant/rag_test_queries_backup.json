@@ -29,6 +29,28 @@
         ]
     },
     {
+        "query": "Provide a Python script that implements a ParallelAgent in ADK. It should have two sub-agents, `researcher` and `writer`, that run in parallel. Execute the parallel agent with a dummy prompt.",
+        "keywords": [
+            "from google.adk.agents import ParallelAgent",
+            "ParallelAgent",
+            "sub_agents=",
+            "Agent(",
+            "Runner(",
+            "run_async"
+        ]
+    },
+    {
+        "query": "How do I create a LoopAgent in ADK that runs a sub-agent for exactly 3 iterations? Provide a complete runnable Python script.",
+        "keywords": [
+            "from google.adk.agents import",
+            "max_iterations=3",
+            "sub_agents=[",
+            "Agent(",
+            "Runner(",
+            "run_async"
+        ]
+    },
+    {
         "query": "Write a Python script that configures an ADK Agent with a specific `GenerateContentConfig` setting the temperature to 0.7. Run the agent with a simple prompt.",
         "keywords": [
             "from google.genai import",
@@ -58,6 +80,28 @@
             "yield",
             "Event(",
             "Runner("
+        ]
+    },
+    {
+        "query": "Write a Python script that demonstrates how to pass data between tools in an ADK Agent using the session state `temp:` prefix. Define two tools, `write_temp` and `read_temp`, and run the agent to execute them.",
+        "keywords": [
+            "tool_context.state['temp:key']",
+            "tool_context.state.get('temp:key')",
+            "tools=[write_temp, read_temp]",
+            "ToolContext",
+            "Agent(",
+            "Runner("
+        ]
+    },
+    {
+        "query": "Create a Python script that uses `ApigeeLlm` as the model for an ADK Agent. Configure it with a proxy URL and custom headers.",
+        "keywords": [
+            "from google.adk.models import",
+            "ApigeeLlm(",
+            "proxy_url=",
+            "custom_headers=",
+            "Agent(",
+            "model="
         ]
     }
 ]
