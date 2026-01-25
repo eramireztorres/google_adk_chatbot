@@ -10,7 +10,7 @@ from typing import Dict
 
 from dotenv import load_dotenv
 
-from google.adk.agents import LlmAgent
+from google.adk.agents import LlmAgent, SequentialAgent, LoopAgent
 from google.adk.models.lite_llm import LiteLlm
 from google.adk.tools.agent_tool import AgentTool
 from google.adk.tools.function_tool import FunctionTool
@@ -38,6 +38,7 @@ def _configure_logging() -> None:
 _configure_logging()
 
 
+# Validating and resolving configuration
 def _resolve_llm_model() -> str | LiteLlm:
     provider = os.getenv("ADK_LLM_PROVIDER", "openai").strip().lower()
     model = os.getenv("ADK_LLM_MODEL", "gpt-4.1-mini").strip()
@@ -45,20 +46,44 @@ def _resolve_llm_model() -> str | LiteLlm:
         return LiteLlm(model=f"openai/{model}")
     return model
 
-
 def _rag_mcp_url() -> str:
+    # Default to 8001 as in the original agent.py
     return os.getenv("RAG_MCP_URL", "http://localhost:8001/sse").strip()
 
+model = _resolve_llm_model()
+rag_mcp_url = _rag_mcp_url()
 
 
+# --- Tool Definitions ---
 
+# 1. RAG Toolset
+rag_toolset = MCPToolset(
+    connection_params=SseConnectionParams(
+        url=rag_mcp_url,
+        timeout=300,
+    )
+)
+
+# 2. Code Check Tool Function
 def run_python_snippet(code: str, tool_context: ToolContext) -> Dict[str, object]:
     """
     Run a small Python snippet in the current environment to validate imports or
     simple instantiations. Avoid long-running operations.
+    Escalate early to exit LoopAgent early if validation fails.
     """
     if not code or not code.strip():
         return {"ok": False, "error": "No code provided."}
+
+    # Sanitize code to prevent dangerous imports or calls (basic heuristic)
+    restricted_keywords = ["import os", "import sys", "subprocess", "open(", "exec(", "eval("]
+    for keyword in restricted_keywords:
+        if keyword in code:
+            tool_context.actions.escalate = True
+            return {"ok": False, "error": f"Use of restricted keyword '{keyword}' in code snippet."}
+
+    # Limit snippet size to prevent abuse
+    if len(code) > 1000:
+        return {"ok": False, "error": "Code snippet too long."}
 
     with tempfile.NamedTemporaryFile("w", suffix=".py", delete=False) as handle:
         handle.write(code)
@@ -69,9 +94,10 @@ def run_python_snippet(code: str, tool_context: ToolContext) -> Dict[str, object
             [sys.executable, path],
             capture_output=True,
             text=True,
-            timeout=10,
+            timeout=5,
         )
     except subprocess.TimeoutExpired:
+        tool_context.actions.escalate = True
         return {"ok": False, "error": "Execution timed out."}
     finally:
         try:
@@ -85,51 +111,98 @@ def run_python_snippet(code: str, tool_context: ToolContext) -> Dict[str, object
         "stdout": result.stdout.strip(),
         "stderr": result.stderr.strip(),
     }
+    if not result_payload["ok"]:
+        tool_context.actions.escalate = True
     return result_payload
 
-
-def _build_rag_agent(model: str | LiteLlm) -> LlmAgent:
-    rag_toolset = MCPToolset(
-        connection_params=SseConnectionParams(
-            url=_rag_mcp_url(),
-            timeout=300,
-        )
-    )
-    return LlmAgent(
-        name="RagAgent",
-        model=model,
-        instruction=(
-            "Answer user questions about Google ADK using the MCP RAG tool. "
-            "If the question has multiple concepts, split into 2-3 focused subqueries, "
-            "call the MCP tool for each, and synthesize a single answer. "
-            "If the user asks for code, include a Python code block. "
-            "Only use ADK APIs that appear in the provided documentation. "
-            "Do not invent convenience methods like agent.chat/agent.run/agent.invoke. "
-            "Use the Runner/Invocation patterns shown in ADK docs for execution. "
-            "Do not include commented-out calls to non-existent methods; omit the call entirely."
-        ),
-        tools=[rag_toolset],
-    )
+# 3. Code Check Tool Wrapper
+check_tool = FunctionTool(func=run_python_snippet)
 
 
-def _build_root_agent(model: str | LiteLlm) -> LlmAgent:
-    rag_agent = _build_rag_agent(model)
-    rag_tool = AgentTool(agent=rag_agent)
-    check_tool = FunctionTool(func=run_python_snippet)
+# --- Agent Definitions ---
 
-    return LlmAgent(
-        name="RootAgent",
-        model=model,
-        instruction=(
-            "You are the main coordinator. For every user query, call the RAG tool. "
-            "If the RagAgent response includes a Python code block, run a minimal "
-            "import/instantiation check using the code-check tool before responding. "
-            "If the check fails, reformulate the query and call the RAG tool again, "
-            "then re-check once before responding. "
-            "Do not return commented-out calls to non-existent methods."
-        ),
-        tools=[rag_tool, check_tool],
-    )
+planning_agent = LlmAgent(
+    name="PlanningAgent",
+    model=model,
+    instruction=(
+        "You are a planning agent. Given a user question about Google ADK, "
+        "carefully analyze if it contains multiple distinct concepts. "
+        "Split the question into 2-3 focused, concise subqueries if multiple concepts exist, "
+        "and return them as a JSON array. If only one concept, return a single-element array. "
+        "Return ONLY the JSON array with no extra text or explanation."
+    ),
+    output_key="subqueries",
+)
 
+query_agent = LlmAgent(
+    name="QueryAgent",
+    model=model,
+    instruction=(
+        "Answer a focused query about Google ADK using the MCP RAG tool. "
+        "If the user requests code, include complete, runnable Python code blocks. "
+        "Use only ADK APIs explicitly documented in the official docs. "
+        "Do NOT invent or mention convenience methods like agent.chat, agent.run, or agent.invoke. "
+        "Demonstrate usage strictly following the Runner/Invocation patterns shown in ADK documentation. "
+        "Respond ONLY with the answer content and code blocks; no extra commentary."
+    ),
+    tools=[rag_toolset],
+    output_key="rag_response",
+)
 
-root_agent = _build_root_agent(_resolve_llm_model())
+code_check_agent = LlmAgent(
+    name="CodeCheckAgent",
+    model=model,
+    instruction=(
+        "Analyze the rag_response output and extract all Python code blocks. "
+        "For each code block, invoke the code snippet checker tool to validate correct imports, syntax, and instantiations. "
+        "If any code block fails validation, respond strictly with 'CHECK_FAILED'. "
+        "If all code blocks pass, respond strictly with 'CHECK_PASSED'. "
+        "Do NOT include any other text or explanation."
+    ),
+    tools=[check_tool],  # Correctly assigned tool
+    output_key="check_result",
+)
+
+synthesizer_agent = LlmAgent(
+    name="SynthesizerAgent",
+    model=model,
+    instruction=(
+        "Produce the final concise answer by synthesizing the rag_response content. "
+        "If code check result is 'CHECK_PASSED', include all valid Python code blocks inline. "
+        "If code check result is 'CHECK_FAILED', respond with a short message indicating retry due to code validation failure, "
+        "but do NOT include any code blocks. "
+        "Ensure the response is self-contained, user-ready, and free of internal notes."
+    ),
+    output_key="final_answer",
+)
+
+# Define a pipeline to run the agents in sequence
+base_rag_agent = SequentialAgent(
+    name="RagAgentPipeline",
+    sub_agents=[planning_agent, query_agent, code_check_agent, synthesizer_agent],
+    description="Pipeline: plan query, code check, synthesize",
+)
+
+# Define a loop agent to retry the sequence if needed
+rag_agent = LoopAgent(
+    name="RagAgentLoop",
+    sub_agents=[base_rag_agent],
+    max_iterations=2,
+)
+
+# Root Agent Setup
+rag_tool = AgentTool(agent=rag_agent)
+
+root_agent = LlmAgent(
+    name="RootAgent",
+    model=model,
+    instruction=(
+        "You are the main coordinator agent. For each user query, invoke the RagAgentLoop workflow "
+        "which plans, queries, checks code, and synthesizes a final answer. "
+        "If code validation fails, retry the loop once to improve the answer. "
+        "Respond ONLY with the final validated answer content. "
+        "Avoid commented-out or non-existent method calls. Be concise and user-friendly."
+    ),
+    tools=[rag_tool],
+    output_key="final_answer",
+)

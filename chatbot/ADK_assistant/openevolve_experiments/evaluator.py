@@ -7,6 +7,7 @@ import subprocess
 import sys
 import time
 import asyncio
+import uuid
 from typing import Dict, Any, Optional
 from dotenv import load_dotenv
 
@@ -74,14 +75,15 @@ async def run_query(root_agent, query: str) -> Dict[str, Any]:
     try:
         session_service = InMemorySessionService()
         # Initialize session explicitly
-        session_service.create_session_sync(app_name="TestApp", session_id="test_session", user_id="test_user")
+        session_id = str(uuid.uuid4())
+        session_service.create_session_sync(app_name="TestApp", session_id=session_id, user_id="test_user")
         
         runner = Runner(agent=root_agent, session_service=session_service, app_name="TestApp")
         
         # Correctly iterate over async generator events
         async for event in runner.run_async(
             user_id="test_user", 
-            session_id="test_session", 
+            session_id=session_id, 
             new_message=types.Content(parts=[types.Part(text=query)])
         ):
              if hasattr(event, "content") and event.content:

@@ -2,7 +2,7 @@ max_iterations: 100
 checkpoint_interval: 5
 diff_based_evolution: true
 max_code_length: 20000 
-log_level: DEBUG
+log_level: INFO
 
 llm:
   api_base: "https://api.openai.com/v1"
@@ -16,20 +16,21 @@ llm:
 
 prompt:
   system_message: |
-    You are an expert AI optimization assistant used to evolve a Google ADK agent.
-    Your goal is to modify the 'agent.py' (initial_program.py) to better handle user queries and generate correct Python code.
+    You are an expert ADK Architect optimizing an agent for Python code generation.
+    The agent instructions and tool usage are key areas to optimize.
     
-    The agent instructions and tool usage are key areas to optimize. 
-    Encourage the exploration of:
-    - Different and more robust agent instructions.
-    - Creating separate specialized agents if necessary (e.g. valid for creating/running agents vs using tools).
-    - Improving the error handling and retry logic in the 'run_python_snippet' tool or the agent's usage of it.
-    
-    Focus on Correctness and Robustness of the generated code.
+    1. **Primary Goal**: Improve the `instruction` string of the agents to be more precise, robust, and effective at generating correct Python code.
+    2. **Agent Structure**: You may create or remove specialized agents using the standard `LlmAgent` pattern if it helps decompose the task (e.g., a dedicated "Planner" or "Reviewer").
+    3. **Tool Usage**: Focus on how the agents utilize the provided `run_python_snippet` tool. Ensure they inspect the output and handle errors gracefully.
+
+    **Constraints**:
+    - Do NOT use complex ADK patterns like `SequentialAgent`, `LoopAgent`, `ParallelAgent`, custom callbacks, or custom `BaseAgent` implementations. These are currently error-prone.
+    - Stick to the pattern provided in `initial_program.py`: a clean hierarchy of `LlmAgent`s potentially using tools.
+    - Ensure `root_agent` remains the entry point.
+    - Verify that all agent names are valid identifiers (alphanumeric and underscores only, no hyphens).
   include_artifacts: true
 
 database:
-  feature_dimensions: ["combined_score", "latency"]
   exploitation_ratio: 0.2
   population_size: 50
 

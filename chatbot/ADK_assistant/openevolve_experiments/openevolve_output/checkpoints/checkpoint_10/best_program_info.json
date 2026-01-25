@@ -1,0 +1,66 @@
+{
+  "id": "5e15d4f8-f067-4167-985c-2a8c3e383e9b",
+  "generation": 1,
+  "iteration": 6,
+  "current_iteration": 10,
+  "metrics": {
+    "combined_score": 0.5314102508624394,
+    "latency": 35.256415804227196,
+    "artifacts": {
+      "details": [
+        {
+          "query": "Write a complete Python script to create and run a simple ADK agent named 'SimpleAgent' using the 'gpt-4.1-nano' model. The agent should have the instruction 'You are a helpful assistant.' and respond to the user message 'Hello'. Use InMemorySessionService for the session.",
+          "score": 0.5,
+          "latency": 53.40760922431946,
+          "code_extracted": true,
+          "exec_success": false,
+          "keyword_match": 0.3333333333333333
+        },
+        {
+          "query": "Create a Python script that defines a custom tool function `calculate_area(radius: int) -> dict` which returns the area of a circle. Initialize an ADK Agent with this tool and run it with the query 'Calculate area of circle with radius 5'.",
+          "score": 0.5,
+          "latency": 32.95418953895569,
+          "code_extracted": true,
+          "exec_success": false,
+          "keyword_match": 0.3333333333333333
+        },
+        {
+          "query": "Write a Python script to create a SequentialAgent in ADK that chains two sub-agents: `step1_agent` and `step2_agent`. `step1_agent` should generate a topic, and `step2_agent` should write a poem about it. Run the sequential agent.",
+          "score": 0.5800000000000001,
+          "latency": 31.257057666778564,
+          "code_extracted": true,
+          "exec_success": false,
+          "keyword_match": 0.6
+        },
+        {
+          "query": "Write a Python script that configures an ADK Agent with a specific `GenerateContentConfig` setting the temperature to 0.7. Run the agent with a simple prompt.",
+          "score": 0.65,
+          "latency": 36.97488808631897,
+          "code_extracted": true,
+          "exec_success": false,
+          "keyword_match": 0.8333333333333334
+        },
+        {
+          "query": "Create a Python script that defines a `before_agent_callback` to print 'Agent Starting' before the agent runs. Attach this callback to an ADK Agent and execute it.",
+          "score": 0.52,
+          "latency": 32.2972366809845,
+          "code_extracted": true,
+          "exec_success": false,
+          "keyword_match": 0.4
+        },
+        {
+          "query": "Write a Python script defining a custom agent class `MyCustomAgent` that inherits from `BaseAgent`. Implement the `_run_async_impl` method to yield a single text event 'Custom Run'. Run an instance of this agent.",
+          "score": 0.65,
+          "latency": 24.64751362800598,
+          "code_extracted": true,
+          "exec_success": false,
+          "keyword_match": 0.8333333333333334
+        }
+      ],
+      "avg_latency": 35.256415804227196
+    }
+  },
+  "language": "python",
+  "timestamp": 1769337695.8521538,
+  "saved_at": 1769337716.848217
+}

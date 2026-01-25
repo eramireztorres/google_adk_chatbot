@@ -38,6 +38,8 @@ def _configure_logging() -> None:
 _configure_logging()
 
 
+
+# Validating and resolving configuration
 def _resolve_llm_model() -> str | LiteLlm:
     provider = os.getenv("ADK_LLM_PROVIDER", "openai").strip().lower()
     model = os.getenv("ADK_LLM_MODEL", "gpt-4.1-mini").strip()
@@ -45,13 +47,38 @@ def _resolve_llm_model() -> str | LiteLlm:
         return LiteLlm(model=f"openai/{model}")
     return model
 
-
 def _rag_mcp_url() -> str:
     return os.getenv("RAG_MCP_URL", "http://127.0.0.1:8000/sse").strip()
 
+model = _resolve_llm_model()
+rag_mcp_url = _rag_mcp_url()
+
+# 1. Define the RAG Agent
+rag_toolset = MCPToolset(
+    connection_params=SseConnectionParams(
+        url=rag_mcp_url,
+        timeout=300,
+    )
+)
+
+rag_agent = LlmAgent(
+    name="RagAgent",
+    model=model,
+    instruction=(
+        "Answer user questions about Google ADK using the MCP RAG tool. "
+        "If the question has multiple concepts, split into 2-3 focused subqueries, "
+        "call the MCP tool for each, and synthesize a single answer. "
+        "If the user asks for code, include a Python code block. "
+        "Only use ADK APIs that appear in the provided documentation. "
+        "Do not invent convenience methods like agent.chat/agent.run/agent.invoke. "
+        "Use the Runner/Invocation patterns shown in ADK docs for execution. "
+        "Do not include commented-out calls to non-existent methods; omit the call entirely."
+    ),
+    tools=[rag_toolset],
+)
 
 
-
+# 2. Define the Code Check Tool
 def run_python_snippet(code: str, tool_context: ToolContext) -> Dict[str, object]:
     """
     Run a small Python snippet in the current environment to validate imports or
@@ -88,48 +115,21 @@ def run_python_snippet(code: str, tool_context: ToolContext) -> Dict[str, object
     return result_payload
 
 
-def _build_rag_agent(model: str | LiteLlm) -> LlmAgent:
-    rag_toolset = MCPToolset(
-        connection_params=SseConnectionParams(
-            url=_rag_mcp_url(),
-            timeout=300,
-        )
-    )
-    return LlmAgent(
-        name="RagAgent",
-        model=model,
-        instruction=(
-            "Answer user questions about Google ADK using the MCP RAG tool. "
-            "If the question has multiple concepts, split into 2-3 focused subqueries, "
-            "call the MCP tool for each, and synthesize a single answer. "
-            "If the user asks for code, include a Python code block. "
-            "Only use ADK APIs that appear in the provided documentation. "
-            "Do not invent convenience methods like agent.chat/agent.run/agent.invoke. "
-            "Use the Runner/Invocation patterns shown in ADK docs for execution. "
-            "Do not include commented-out calls to non-existent methods; omit the call entirely."
-        ),
-        tools=[rag_toolset],
-    )
+# 3. Define the Root Agent
+rag_tool = AgentTool(agent=rag_agent)
+check_tool = FunctionTool(func=run_python_snippet)
 
+root_agent = LlmAgent(
+    name="RootAgent",
+    model=model,
+    instruction=(
+        "You are the main coordinator. For every user query, call the RAG tool. "
+        "If the RagAgent response includes a Python code block, run a minimal "
+        "import/instantiation check using the code-check tool before responding. "
+        "If the check fails, reformulate the query and call the RAG tool again, "
+        "then re-check once before responding. "
+        "Do not return commented-out calls to non-existent methods."
+    ),
+    tools=[rag_tool, check_tool],
+)
 
-def _build_root_agent(model: str | LiteLlm) -> LlmAgent:
-    rag_agent = _build_rag_agent(model)
-    rag_tool = AgentTool(agent=rag_agent)
-    check_tool = FunctionTool(func=run_python_snippet)
-
-    return LlmAgent(
-        name="RootAgent",
-        model=model,
-        instruction=(
-            "You are the main coordinator. For every user query, call the RAG tool. "
-            "If the RagAgent response includes a Python code block, run a minimal "
-            "import/instantiation check using the code-check tool before responding. "
-            "If the check fails, reformulate the query and call the RAG tool again, "
-            "then re-check once before responding. "
-            "Do not return commented-out calls to non-existent methods."
-        ),
-        tools=[rag_tool, check_tool],
-    )
-
-
-root_agent = _build_root_agent(_resolve_llm_model())

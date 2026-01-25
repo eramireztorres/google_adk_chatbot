@@ -2440,3 +2440,113 @@ Pick the best ones and reduce to 6 entries in
 
 /home/erick/repo/google_adk_chatbot/chatbot/ADK_assistant/rag_test_queries.json
 
+____
+
+Your tasks are:
+
+1- Study docs:
+
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-agents.md
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-agents-config.md
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-agents-custom-agents.md
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-agents-llm-agents.md
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-agents-models.md
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-agents-multi-agents.md
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-agents-workflow-agents.md
+
+2- Modify
+
+/home/erick/repo/google_adk_chatbot/chatbot/ADK_assistant/openevolve_experiments/initial_program.py
+
+To keep the same performance but exposing agents as in docs, not using builders
+
+_____
+
+Your tasks are:
+
+1- Study docs:
+
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-agents.md
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-agents-config.md
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-agents-custom-agents.md
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-agents-llm-agents.md
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-agents-models.md
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-agents-multi-agents.md
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-agents-workflow-agents.md
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-agents-workflow-agents-loop-agents.md
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-agents-workflow-agents-parallel-agents.md
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-agents-workflow-agents-sequential-agents.md
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-callbacks.md
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-callbacks-design-patterns-and-best-practices.md
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-callbacks-types-of-callbacks.md
+
+2- Help me improving system_message in
+
+/home/erick/repo/google_adk_chatbot/chatbot/ADK_assistant/openevolve_experiments/config.yaml
+
+So the LLM knows he can use also:
+
+SequentialAgent
+deterministic agent (extending BaseAgent)
+LoopAgent (important a minimum signature so he knows how to escalate)
+callbacks (which types, minimum signatures to know how to use context)
+Use stateful agents (writing state in InvocationContext) or keep them stateless
+Is mandatory the root_agent is a LlmAgent, not deterministic
+
+All of this with minimum signatures and trying the system_message is not too long
+
+Think carefully about this
+
+____
+
+I think it is too short yet. The LLM might hallucinate in:
+
+- How to escalate in LoopAgent
+- Types of callbacks and when to use them
+- He does not know how to use deterministic BaseAgent as in here
+
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-agents-custom-agents.md
+
+Improve it
+
+____
+Should we change
+
+session_id
+in
+
+/home/erick/repo/google_adk_chatbot/chatbot/ADK_assistant/openevolve_experiments/evaluator.py
+
+to a random generated one to avoid conflict with previous iterations ?
+
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-sessions.md
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-sessions-express-mode.md
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-sessions-memory.md
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-sessions-session.md
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-sessions-state.md
+
+____
+
+I am getting a lot of signature  errors and hallucinations here
+
+/home/erick/repo/google_adk_chatbot/chatbot/ADK_assistant/openevolve_experiments/openevolve_output/logs/openevolve_20260125_113245.log
+
+Study them and give me your opinion:
+
+Should we rollback system_message so the LLM only tries to improve
+-agent instructions
+-create/remove agents but only following the initial-program pattern (AgentTool)
+
+?
+
+__
+
+
+Your tasks is learning the agent arquitecture for the optimized
+
+/home/erick/repo/google_adk_chatbot/chatbot/ADK_assistant/openevolve_experiments/openevolve_output/best/best_program.py
+
+And to fix accordingly the agent team in
+
+/home/erick/repo/google_adk_chatbot/chatbot/ADK_assistant/agent.py
+
