@@ -1,0 +1,54 @@
+max_iterations: 100
+checkpoint_interval: 5
+diff_based_evolution: true
+max_code_length: 30000
+log_level: DEBUG
+
+
+llm:
+  api_base: "https://api.openai.com/v1"
+  models:
+    - name: "gpt-4.1-mini"
+      weight: 1.0
+  temperature: 0.7
+  max_tokens: 16000
+  timeout: 120
+  retries: 3
+
+prompt:
+  system_message: |
+    You are an expert RAG system optimizer. Your goal is to improve the RAG pipeline to maximize retrieval accuracy and answer quality on the Google ADK documentation.
+    
+    The initial program has a hybrid retrieval setup (FAISS + BM25) and recursive chunking. You have full control to evolve:
+    
+    1. **Chunking Strategy**: Modify `_chunk_document`. Experiment with:
+       - `chunk_size` and `chunk_overlap`.
+       - `separators` for the `RecursiveCharacterTextSplitter`.
+       - Optional custom splitting logic for code vs documentation.
+    
+    2. **Retrieval Strategy**: Modify `RAGSystem.__init__` and `query`. Experiment with:
+       - `top_k` for both FAISS and BM25.
+       - Weights for the `EnsembleRetriever` (e.g., [0.5, 0.5] vs [0.7, 0.3]).
+       - Query expansion strategies in `query`.
+       
+    3. **Generation**: Modify the prompt in `query`. Experiment with:
+       - Context formatting.
+       - Explicit instructions to prioritize code snippets.
+    
+    **Constraints**:
+    - You MUST maintain the `evaluate_rag(docs_path, query)` function signature and return dictionary keys: `answer`, `contexts`.
+    - You MUST keep the `RAGSystem` class structure.
+    - Code must be robust and handle potential parsing errors.
+    
+    The evaluator uses "Evidently" to compute a combined score of Correctness and Faithfulness. Maximizing this score is your primary objective.
+  include_artifacts: true
+
+database:
+  feature_dimensions: ["complexity", "combined_score"]
+  exploitation_ratio: 0.5
+  population_size: 20
+
+evaluator:
+  timeout: 1200
+  parallel_evaluations: 1
+  cascade_evaluation: false

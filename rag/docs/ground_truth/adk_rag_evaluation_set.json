@@ -1,0 +1,220 @@
+[
+    {
+        "query": "Compare Google ADK with LangGraph. Can ADK achieve the same level of control over agent workflows that LangGraph provides?",
+        "ground_truth_answer": "Yes, Google ADK can achieve the same level of workflow control as LangGraph. While ADK provides high-level abstractions like SequentialAgent, LoopAgent, and ParallelAgent for common patterns, you can achieve full deterministic control by creating **Custom Agents**. This involves inheriting from `BaseAgent` and implementing the `_run_async_impl` method, where you can define arbitrary orchestration logic, conditional branching, state-based routing, and explicit control flow using standard Python constructs (if/else, for/while loops). This gives you graph-like deterministic behavior similar to LangGraph.",
+        "ground_truth_context": "Custom agents provide the ultimate flexibility in ADK, allowing you to define **arbitrary orchestration logic** by inheriting directly from `BaseAgent` and implementing your own control flow. This goes beyond the predefined patterns of `SequentialAgent`, `LoopAgent`, and `ParallelAgent`...",
+        "source_files": [
+            "adk-docs-agents-custom-agents.md",
+            "adk-docs-agents-workflow-agents.md"
+        ],
+        "mandatory_terms": [
+            "Custom Agent",
+            "BaseAgent",
+            "_run_async_impl",
+            "deterministic"
+        ],
+        "penalized_terms": [
+            "cannot",
+            "not possible",
+            "limited",
+            "LangGraph is better",
+            "ADK does not support"
+        ]
+    },
+    {
+        "query": "Explain how the ADK Runtime works and what the Event Loop pattern is.",
+        "ground_truth_answer": "The ADK Runtime operates on an **Event Loop** pattern. The `Runner` acts as the orchestrator: it receives a user query, calls the agent's execution logic, and the agent runs until it yields an `Event`. When an event is yielded, the agent **pauses**. The Runner then processes the event (committing state changes via Services like `SessionService`), forwards the event upstream, and only **after** processing does the agent **resume**. This yield/pause/process/resume cycle ensures state consistency and proper event tracking.",
+        "ground_truth_context": "At its heart, the ADK Runtime operates on an **Event Loop**. This loop facilitates a back-and-forth communication between the `Runner` component and your defined 'Execution Logic'... The Agent runs until it has something to report... it then **yields** or **emits** an `Event`.",
+        "source_files": [
+            "adk-docs-runtime.md"
+        ],
+        "mandatory_terms": [
+            "Event Loop",
+            "Runner",
+            "yield",
+            "Event",
+            "pause",
+            "resume"
+        ],
+        "penalized_terms": [
+            "direct execution",
+            "agent.run(",
+            "agent.invoke("
+        ]
+    },
+    {
+        "query": "What are the different types of workflow agents in Google ADK and when should I use each?",
+        "ground_truth_answer": "Google ADK provides three main workflow agent types: **SequentialAgent** executes sub-agents in a fixed order (use for pipelines like write→review→refactor). **LoopAgent** repeatedly runs sub-agents for a number of iterations or until a termination condition (use for iterative refinement). **ParallelAgent** runs sub-agents concurrently (use for independent tasks). All workflow agents are deterministic and not powered by an LLM. For complex conditional logic, use **Custom Agents** by inheriting from `BaseAgent`.",
+        "ground_truth_context": "The `SequentialAgent` is a workflow agent that executes its sub-agents in the order they are specified... The `LoopAgent` is a workflow agent that executes its sub-agents in a loop (i.e. iteratively)... workflow agents are not powered by an LLM, and is thus deterministic...",
+        "source_files": [
+            "adk-docs-agents-workflow-agents.md",
+            "adk-docs-agents-workflow-agents-sequential-agents.md",
+            "adk-docs-agents-workflow-agents-loop-agents.md",
+            "adk-docs-agents-workflow-agents-parallel-agents.md"
+        ],
+        "mandatory_terms": [
+            "SequentialAgent",
+            "LoopAgent",
+            "ParallelAgent",
+            "deterministic"
+        ],
+        "penalized_terms": [
+            "I don't know",
+            "not available",
+            "LLM-powered workflow"
+        ]
+    },
+    {
+        "query": "Show me how to correctly create a FunctionTool from a Python function in Google ADK.",
+        "ground_truth_answer": "To create a FunctionTool in Python, you pass the function directly using the `func` argument. Do NOT pass a `name` argument - the tool derives its name from the function's name. Example:\n\n```python\nfrom google.adk.tools import FunctionTool\n\ndef get_weather(city: str) -> dict:\n    \"\"\"Gets weather for a city.\"\"\"\n    return {\"status\": \"success\", \"temp\": 20}\n\nweather_tool = FunctionTool(func=get_weather)\n```",
+        "ground_truth_context": "`weather_tool = FunctionTool(func=get_weather_report)`",
+        "source_files": [
+            "adk-docs-tools-custom.md"
+        ],
+        "mandatory_terms": [
+            "FunctionTool",
+            "func="
+        ],
+        "penalized_terms": [
+            "name=",
+            "FunctionTool(name=",
+            "FunctionTool(\"",
+            "Tool(name="
+        ]
+    },
+    {
+        "query": "Write complete Python code to run an LlmAgent that answers questions. Include all necessary imports and the correct way to execute the agent.",
+        "ground_truth_answer": "Here is a complete example:\n\n```python\nimport asyncio\nfrom google.adk.agents import Agent\nfrom google.adk.runners import Runner\nfrom google.adk.sessions import InMemorySessionService\nfrom google.genai import types\n\nagent = Agent(\n    model=\"gemini-2.0-flash\",\n    name=\"qa_agent\",\n    instruction=\"Answer user questions helpfully.\"\n)\n\nasync def main():\n    session_service = InMemorySessionService()\n    await session_service.create_session(app_name=\"app\", user_id=\"user1\", session_id=\"s1\")\n    runner = Runner(agent=agent, app_name=\"app\", session_service=session_service)\n    \n    message = types.Content(role='user', parts=[types.Part(text=\"Hello\")])\n    for event in runner.run(user_id=\"user1\", session_id=\"s1\", new_message=message):\n        if event.is_final_response():\n            print(event.content.parts[0].text)\n\nasyncio.run(main())\n```",
+        "ground_truth_context": "runner = Runner(agent=weather_sentiment_agent, app_name=APP_NAME, session_service=session_service)\nrunner.run(user_id=USER_ID, session_id=SESSION_ID, new_message=content)",
+        "source_files": [
+            "adk-docs-tools-custom.md",
+            "adk-docs-runtime.md",
+            "adk-docs-get-started-quickstart.md"
+        ],
+        "mandatory_terms": [
+            "Runner",
+            "runner.run",
+            "InMemorySessionService",
+            "session_service",
+            "google.adk.runners",
+            "google.adk.sessions"
+        ],
+        "penalized_terms": [
+            "agent.run(",
+            "agent.invoke(",
+            "agent.chat(",
+            "agent.execute(",
+            "qa_agent.run("
+        ]
+    },
+    {
+        "query": "Write Python code for a Custom Agent that routes to different sub-agents based on a value in session state.",
+        "ground_truth_answer": "Here is a Custom Agent that checks session state and routes accordingly:\n\n```python\nfrom typing import AsyncGenerator\nfrom google.adk.agents import BaseAgent, LlmAgent\nfrom google.adk.agents.invocation_context import InvocationContext\nfrom google.adk.events import Event\n\nclass RouterAgent(BaseAgent):\n    agent_a: LlmAgent\n    agent_b: LlmAgent\n    \n    async def _run_async_impl(self, ctx: InvocationContext) -> AsyncGenerator[Event, None]:\n        status = ctx.session.state.get(\"status\")\n        if status == \"active\":\n            async for event in self.agent_a.run_async(ctx):\n                yield event\n        else:\n            async for event in self.agent_b.run_async(ctx):\n                yield event\n```",
+        "ground_truth_context": "previous_result = ctx.session.state.get(\"some_key\")\nif previous_result == \"some_value\":\n    # ... call a specific sub-agent ...",
+        "source_files": [
+            "adk-docs-agents-custom-agents.md"
+        ],
+        "mandatory_terms": [
+            "BaseAgent",
+            "_run_async_impl",
+            "InvocationContext",
+            "ctx.session.state.get",
+            "run_async",
+            "async for event in",
+            "yield event"
+        ],
+        "penalized_terms": [
+            ".run(",
+            ".invoke(",
+            "return agent_a",
+            "agent_a.execute("
+        ]
+    },
+    {
+        "query": "How do I create a tool that modifies session state? Show me Python code with ToolContext.",
+        "ground_truth_answer": "To modify session state from a tool, add `tool_context: ToolContext` as a parameter. Access state via `tool_context.state`:\n\n```python\nfrom google.adk.tools import FunctionTool, ToolContext\n\ndef update_preference(preference: str, value: str, tool_context: ToolContext) -> dict:\n    \"\"\"Updates a user preference in session state.\"\"\"\n    tool_context.state[f\"user:{preference}\"] = value\n    return {\"status\": \"success\", \"updated\": preference}\n\npref_tool = FunctionTool(func=update_preference)\n```\n\nNote: Do NOT include `tool_context` in the docstring as it's automatically injected by ADK.",
+        "ground_truth_context": "def update_user_preference(preference: str, value: str, tool_context: ToolContext):\n    tool_context.state['key'] = value",
+        "source_files": [
+            "adk-docs-tools-custom.md"
+        ],
+        "mandatory_terms": [
+            "tool_context: ToolContext",
+            "tool_context.state",
+            "google.adk.tools"
+        ],
+        "penalized_terms": [
+            "ctx: InvocationContext",
+            "global state",
+            "session.state ="
+        ]
+    },
+    {
+        "query": "Write a complete ADK script with a SequentialAgent pipeline that has three LlmAgents passing data via output_key, and run it with the Runner.",
+        "ground_truth_answer": "Here is a complete sequential pipeline:\n\n```python\nimport asyncio\nfrom google.adk.agents import LlmAgent, SequentialAgent\nfrom google.adk.runners import Runner\nfrom google.adk.sessions import InMemorySessionService\nfrom google.genai import types\n\nwriter = LlmAgent(name=\"Writer\", model=\"gemini-2.0-flash\",\n    instruction=\"Write code based on user request.\",\n    output_key=\"generated_code\")\n\nreviewer = LlmAgent(name=\"Reviewer\", model=\"gemini-2.0-flash\",\n    instruction=\"Review this code: {generated_code}\",\n    output_key=\"review_comments\")\n\nrefactorer = LlmAgent(name=\"Refactorer\", model=\"gemini-2.0-flash\",\n    instruction=\"Refactor code: {generated_code} based on: {review_comments}\",\n    output_key=\"final_code\")\n\npipeline = SequentialAgent(name=\"Pipeline\", sub_agents=[writer, reviewer, refactorer])\n\nasync def main():\n    session_service = InMemorySessionService()\n    await session_service.create_session(app_name=\"app\", user_id=\"u1\", session_id=\"s1\")\n    runner = Runner(agent=pipeline, app_name=\"app\", session_service=session_service)\n    msg = types.Content(role='user', parts=[types.Part(text=\"Write a factorial function\")])\n    for event in runner.run(user_id=\"u1\", session_id=\"s1\", new_message=msg):\n        if event.is_final_response():\n            print(event.content.parts[0].text)\n\nasyncio.run(main())\n```",
+        "ground_truth_context": "SequentialAgent(sub_agents=[CodeWriterAgent, CodeReviewerAgent, CodeRefactorerAgent])\noutput_key=\"generated_code\"",
+        "source_files": [
+            "adk-docs-agents-workflow-agents-sequential-agents.md",
+            "adk-docs-sessions-state.md",
+            "adk-docs-runtime.md"
+        ],
+        "mandatory_terms": [
+            "SequentialAgent",
+            "output_key",
+            "sub_agents",
+            "Runner",
+            "InMemorySessionService",
+            "{generated_code}",
+            "{review_comments}"
+        ],
+        "penalized_terms": [
+            "pipeline.run(",
+            "pipeline.execute(",
+            "agent.invoke("
+        ]
+    },
+    {
+        "query": "How do I implement a retry loop in a LoopAgent that exits early when a condition is met? Show Python code using escalate.",
+        "ground_truth_answer": "Use a tool that sets `tool_context.actions.escalate = True` to exit the loop early. Here's a complete example:\n\n```python\nfrom google.adk.agents import LlmAgent, LoopAgent\nfrom google.adk.tools import FunctionTool, ToolContext\n\ndef exit_loop(tool_context: ToolContext) -> dict:\n    \"\"\"Call this to exit the loop when task is complete.\"\"\"\n    tool_context.actions.escalate = True\n    return {}\n\ncritic = LlmAgent(name=\"Critic\", model=\"gemini-2.0-flash\",\n    instruction=\"Review document. If good, say 'DONE'. Otherwise provide feedback.\",\n    output_key=\"feedback\")\n\nrefiner = LlmAgent(name=\"Refiner\", model=\"gemini-2.0-flash\",\n    instruction=\"If feedback is 'DONE', call exit_loop. Otherwise refine document.\",\n    tools=[FunctionTool(func=exit_loop)],\n    output_key=\"document\")\n\nloop = LoopAgent(name=\"RefineLoop\", sub_agents=[critic, refiner], max_iterations=5)\n```",
+        "ground_truth_context": "tool_context.actions.escalate = True\nLoopAgent(sub_agents=[critic_agent_in_loop, refiner_agent_in_loop], max_iterations=5)",
+        "source_files": [
+            "adk-docs-agents-workflow-agents-loop-agents.md",
+            "adk-docs-tools-custom.md"
+        ],
+        "mandatory_terms": [
+            "LoopAgent",
+            "tool_context.actions.escalate",
+            "max_iterations",
+            "FunctionTool"
+        ],
+        "penalized_terms": [
+            "max_retries=",
+            "loop.break(",
+            "return False"
+        ]
+    },
+    {
+        "query": "Write Python code for a Custom Agent that orchestrates a story generation workflow: generate story, check tone, and regenerate if tone is negative. Include proper imports and the _run_async_impl method.",
+        "ground_truth_answer": "Here is a Custom Agent with conditional regeneration:\n\n```python\nfrom typing import AsyncGenerator\nfrom google.adk.agents import BaseAgent, LlmAgent\nfrom google.adk.agents.invocation_context import InvocationContext\nfrom google.adk.events import Event\n\nclass StoryFlowAgent(BaseAgent):\n    story_generator: LlmAgent\n    tone_checker: LlmAgent\n    \n    async def _run_async_impl(self, ctx: InvocationContext) -> AsyncGenerator[Event, None]:\n        max_attempts = 3\n        for attempt in range(max_attempts):\n            # Generate story\n            async for event in self.story_generator.run_async(ctx):\n                yield event\n            \n            # Check tone\n            async for event in self.tone_checker.run_async(ctx):\n                yield event\n            \n            tone = ctx.session.state.get(\"tone_result\", \"\")\n            if tone != \"negative\":\n                break  # Story is acceptable\n            # If negative, loop will regenerate\n```",
+        "ground_truth_context": "class StoryFlowAgent(BaseAgent):\n    async def _run_async_impl(self, ctx: InvocationContext) -> AsyncGenerator[Event, None]:\n        if tone == 'negative': ... Regenerating story...",
+        "source_files": [
+            "adk-docs-agents-custom-agents.md"
+        ],
+        "mandatory_terms": [
+            "BaseAgent",
+            "_run_async_impl",
+            "InvocationContext",
+            "AsyncGenerator",
+            "run_async",
+            "ctx.session.state",
+            "yield event",
+            "for",
+            "range"
+        ],
+        "penalized_terms": [
+            "story_generator.run(",
+            "story_generator.invoke(",
+            "def run(",
+            "return event"
+        ]
+    }
+]

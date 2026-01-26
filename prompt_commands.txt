@@ -2550,3 +2550,156 @@ And to fix accordingly the agent team in
 
 /home/erick/repo/google_adk_chatbot/chatbot/ADK_assistant/agent.py
 
+
+____
+
+Some typical hallucinations of LLM models when they are asked about google ADK are:
+
+- They think we do not have so much control on agent workflow. For example, they think we cannot (easily) create deterministic workflows in google ADK, as we can do, for example, with langgraph.
+What they miss is the option of extending BaseAgent to create non-LLM agents that allow deterministic workflows as the examples in
+
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-agents-custom-agents.md
+
+- They hallucinates with python code when asked to run a given agent, with answers like
+agent.run  or agent.invoke or agent.chat
+All of them are wrong, because they should use the abstraction Runner as it is explained here
+
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-runtime.md and can be seen in example here
+
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-agents-custom-agents.md
+
+- They make mistakes with types' signatures, like adding the argument "name" to FunctionTool, which raises an error. See
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs-tools-custom.md
+
+- They make a lot mistakes in python-code imports
+
+My goal is to create a json with 10 entries to be used in the evaluation of a RAG pipeline that retrieves google-adk information from documents in
+
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/adk-docs.md
+
+Each entry should have:
+
+- some query or question
+- some expected answer (ground truth)
+- some expected context (ground truth)
+- list of original markdown files where the context is present
+- a list of mandatory terms and/or phrases (this is for the deterministic, non-LLM, part of the evaluation: some queries require specific words in the answer to be correct)
+- a list of penalized terms and/or phrases (like wrong imports, agent-run bad signatures, other bad signatures, to say I dont know when the info is there, etc)
+
+
+3 of these entries are questions that do not ask for python code in the answer, like general questions about google ADK. But it is better if the pipeline gives python example anyway. One example could be: compare google ADK with Langgraph.
+3 of these entries explicitly ask for python-code examples
+4 of the entries require python code examples, but their answer is more difficult because require to establish relationships with code snippets that are present in different documents of the folder
+
+The questions should be hard for a pipeline system in general and some of them prone to the above hallucinations to test it.
+
+Your tasks are:
+
+1- Study the current version of the desired json file
+
+/home/erick/repo/google_adk_chatbot/rag/docs/ground_truth/adk_rag_evaluation_set.json
+
+2- Study carefully the Documentation.
+3- Improve the json for better RAG-evaluation results.
+
+__
+
+Save the created file in folder
+
+/home/erick/repo/google_adk_chatbot/rag/docs/ground_truth
+
+____
+
+
+My goal is to guarantee that my new openevolve experiment has an evaluator that is not too coupled to the initial-program RAG pipeline, but can be used to evolve a different pipeline (for example, graph RAG instead of regular RAG) easily, by only changing initial_program.
+
+Your tasks are:
+
+1- Study experiment in
+
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/1/config.yaml
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/1/evaluator.py
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/1/initial_program.py
+
+2- Is it decoupled enough or does it need to be improved ?
+
+______________________________________
+
+openevolve-run /home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/1/initial_program.py \
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/1/evaluator.py \
+--config /home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/1/config.yaml \
+--iterations 1
+
+____
+
+My goal is to modify
+
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/1/config.yaml
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/1/initial_program.py
+
+in order to evolve a GraphRag pipeline instead of a regular one.
+
+Your tasks are:
+
+1- Study docs in
+
+/home/erick/repo/google_adk_chatbot/rag/docs/langchain/Code Generation with GraphRAG - GraphRAG.pdf
+/home/erick/repo/google_adk_chatbot/rag/docs/langchain/Graph RAG - Docs by LangChain.pdf
+/home/erick/repo/google_adk_chatbot/rag/docs/langchain/GraphRAG using LangChain. codes explained with example.pdf
+
+2- Evaluate carefully whether the initial rag pipeline can be robustly replaced
+
+____
+Keep in mind I am executing openevolve experiment with this environment
+
+/home/erick/repo/google_adk_chatbot/venv
+
+Let me know if some package is missing ot install it
+
+
+__
+
+
+Please, add this folder to git ignore:
+
+/home/erick/repo/google_adk_chatbot/rag/docs/rag_books
+
+__
+
+
+I think graph-rag pipeline seems too difficult to evolve with openevolve.
+My goal is going back to non-graph rag pipeline, starting from the known initial program
+
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/1/initial_program_non_rag_backup.py
+
+Your tasks are:
+
+1- Study
+
+- General ideas of
+
+/home/erick/repo/google_adk_chatbot/rag/docs/rag_books/Kimothi A. A Simple Guide to Retrieval Augmented Generation 2025/Kimothi A. A Simple Guide to Retrieval Augmented Generation 2025.pdf
+
+- Chapter 7 of /home/erick/repo/google_adk_chatbot/rag/docs/rag_books/Jay R. Generative AI Apps with Langchain and Python. A Project-Based Appr...2024/Jay R. Generative AI Apps with Langchain and Python. A Project-Based Appr...2024.pdf
+
+
+2- Give me ideas of how to improve initial program
+
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/1/initial_program_non_rag_backup.py
+
+3- Replace
+
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/1/initial_program.py
+
+with the improved one
+
+4- Improve system_message in
+
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/1/config.yaml
+
+if needed
+
+
+
+
+
