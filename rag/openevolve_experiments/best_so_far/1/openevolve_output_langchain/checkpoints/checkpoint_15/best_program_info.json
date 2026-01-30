@@ -1,0 +1,26 @@
+{
+  "id": "36814b78-2950-4fee-b673-2726207a4f03",
+  "generation": 2,
+  "iteration": 6,
+  "current_iteration": 15,
+  "metrics": {
+    "combined_score": 0.9437343948737287,
+    "metrics": {
+      "avg_score": 0.9082864832535886,
+      "time_penalty": 0.11455208837985993,
+      "avg_latency": 16.455208837985992,
+      "framework_id": 2.0,
+      "complexity": 36.9,
+      "diversity": 2.0,
+      "performance": 0.9437343948737287
+    },
+    "framework_id": 2.0,
+    "complexity": 36.9,
+    "artifacts": {
+      "critique": "Framework: LangChain\nQuery: 'Provide the Python code from the ADK quickstart that defines the get_current_time tool and the root_agent.' -> Low contextual_recall (0.00): The score is 0.00 because the expected output consists entirely of code snippets and import statements that are unrelated to the retrieval context, which is focused on a function returning the current time in a city. The retrieval context does not support any of the sentences in the expected output, leading to a low score.\nQuery: 'Give the Python example of a Function Tool with required parameters city and unit from the ADK function tools documentation.' -> Low contextual_recall (0.67): The score is 0.67 because the first two sentences in the expected output are supported by nodes 2 and 3, which contain the function definition and its description, but the remaining sentences are unrelated to the nodes, leading to a moderate confidence in the attribution."
+    }
+  },
+  "language": "python",
+  "timestamp": 1767448064.6195872,
+  "saved_at": 1767451281.6061525
+}

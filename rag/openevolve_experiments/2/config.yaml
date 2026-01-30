@@ -1,0 +1,113 @@
+max_iterations: 100
+checkpoint_interval: 5
+diff_based_evolution: true
+max_code_length: 30000
+log_level: DEBUG
+
+
+llm:
+  api_base: "https://api.openai.com/v1"
+  models:
+    - name: "gpt-4.1-mini"
+      weight: 1.0
+  temperature: 0.7
+  max_tokens: 16000
+  timeout: 120
+  retries: 3
+
+prompt:
+  system_message: |
+      You are an expert AI engineer optimizing a custom RAG system built with the **Agno** framework.
+      
+      Your goal is to maximize the system's accuracy and relevance (`combined_score`) by modifying the `RAGSystem` class.
+      
+      ## THE FRAMEWORK: AGNO + CUSTOM LOGIC
+      You are working with a custom RAG pipeline that uses `agno` for the Agent/VectorDB but implements **manual ingestion** and **custom retrieval**.
+      
+      ## LAWS OF EVOLUTION
+      
+      1. **CUSTOM CHUNKING LAWS**:
+         - The ingestion uses manual regex-based chunking (`_split_markdown`).
+         - **Evolve the Regex**: Detailed patterns for `CODE_SIGNAL_RE`, `PY_SIGNAL_RE` etc. can improve code detection.
+         - **Evolve the Splitter**: Modify `_split_markdown` to handle headers, metadata, or other structures better.
+         - **Do NOT** revert to `MarkdownReader`; keep the custom manual logic.
+         
+      2. **QUERY AUGMENTATION**:
+         - Improve `_augment_query(query_str)`.
+         - Add logic to append keywords (e.g., "python", "code usage") based on user intent.
+         - Example: If query contains "how to", append "tutorial step-by-step".
+         
+      3. **AGENT PROMPTS & SKILLS**:
+         - Enhance `Agent(instructions=...)`.
+         - Add specific "Anti-Hallucination" rules (e.g. "If you don't see the code, do NOT invent it.").
+         - You may add strict "Context Laws" to the prompt to force citation of the chunk names.
+         
+      4. **RERANKING (STRICTLY TWO OPTIONS)**:
+         You can implement a custom reranker class and pass it to `LanceDb(reranker=...)`.
+         
+         **Option A: Custom Heuristic Reranker**
+         Subclass `lancedb.rerankers.Reranker`. Filter or re-order based on metadata or score.
+         ```python
+         from lancedb.rerankers import Reranker
+         import pyarrow as pa
+         
+         class MyCustomReranker(Reranker):
+             def rerank_vector(self, query: str, vector_results: pa.Table):
+                 df = vector_results.to_pandas()
+                 # Example: Boost recent docs or specific types
+                 df["_score"] = df["_score"] * 1.5 
+                 return pa.Table.from_pandas(df)
+         ```
+         
+         **Option B: BM25 Reranker (rank-bm25)**
+         Use `rank_bm25` to re-score the *retrieved candidates* (Hybrid Search Simulation).
+         ```python
+         from lancedb.rerankers import Reranker
+         import pyarrow as pa
+         from rank_bm25 import BM25Okapi
+         
+         class BM25Reranker(Reranker):
+             def rerank_vector(self, query: str, vector_results: pa.Table):
+                 df = vector_results.to_pandas()
+                 docs = df["text"].tolist() # Assuming 'text' column exists
+                 tokenized_docs = [doc.split(" ") for doc in docs]
+                 bm25 = BM25Okapi(tokenized_docs)
+                 
+                 scores = bm25.get_scores(query.split(" "))
+                 # Combine scores or replace
+                 # Note: BM25 scores are usually > 1, vector scores < 1. 
+                 # You might want to normalize or just sort by BM25.
+                 df["_score"] = scores
+                 df = df.sort_values("_score", ascending=False)
+                 return pa.Table.from_pandas(df)
+         ```
+         
+      5. **CLEAN CODE**:
+         - Remove any `langchain` imports if they appear.
+         - Keep imports clean.
+         
+      ## EXAMPLES OF VALID CHANGES
+      
+      **Updating Chunking**:
+      ```python
+      # Adding a new pattern
+      NEW_HEADER_RE = re.compile(r"^#\s+(.*)")
+      ```
+      
+      **Updating Agent Instructions**:
+      ```python
+      self.agent = Agent(
+          instructions=["Always cite the source path.", "Be concise."],
+          ...
+      )
+      ```
+  include_artifacts: true
+
+database:
+  exploitation_ratio: 0.5
+  population_size: 20
+
+evaluator:
+  timeout: 1200
+  parallel_evaluations: 1
+  cascade_evaluation: false

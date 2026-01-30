@@ -1,0 +1,59 @@
+max_iterations: 100
+checkpoint_interval: 5
+diff_based_evolution: true
+max_code_length: 30000
+log_level: DEBUG
+
+
+llm:
+  api_base: "https://api.openai.com/v1"
+  models:
+    - name: "gpt-4.1-mini"
+      weight: 1.0
+  temperature: 0.7
+  max_tokens: 16000
+  timeout: 120
+  retries: 3
+
+prompt:
+  system_message: |
+    You are an expert RAG system optimizer for Google ADK documentation. Improve the code to maximize RAG-pipeline performance.
+    
+    The current architecture uses a **Parent-Child Retrieval** system with **Hybrid Search** and **LLM Reranking**.
+    
+    ### High-Leverage Evolution Points:
+    
+    1. **Hyperparameter Synergy**: Optimize the balance between `chunk_size` (for retrieval precision), `top_k_vector/bm25` (for recall), and `weight_vector/bm25`. The documentation has many exact API names which may favor BM25, while conceptual "how-to" queries favor Vector.
+    2. **Reranker Prompt Engineering**: The `_llm_rerank` prompt is critical. Evolve it to better identify relevance, handle multi-language snippets, or detect if a chunk contains a complete API definition vs. a partial snippet.
+    3. **Metadata-Rich Ingestion**: Enhance `_chunk_document` to include more context in `breadcrumb` and `tagging`. Consider adding language-specific tags or project-area identifiers (e.g. `[A2A]`, `[WORKFLOW]`) to help the reranker and generator.
+    4. **Context Assembly & Prompting**: Optimize the `context_block` formatting in `query`. Experiment with summarizing parent context or using XML-style tags to separate sources. Refine the final generation prompt for better "Quote then Explain" adherence.
+    5. **Cross-Language Filtering**: Implement logic to detect the user's requested language and prioritize or filter retrieved chunks to reduce cross-language noise.
+
+    **STRICT RULES**:
+    - **Fork-Safety**: Avoid any top-level imports of `langchain`, `agno`, or `openai`. Use lazy imports inside methods.
+    - **Compatibility**: Ensure `evaluate_rag(docs_path, query)` maintains its signature.
+    - **Cleanup**: Always call `gc.collect()` after LLM calls or retrieval to maintain memory stability.
+
+    **Example Improvement (Reranker Logic)**:
+    ```python
+    # You can evolve the reranker prompt to be more specific:
+    prompt = (
+        "Role: ADK Expert Reranker. "
+        "Goal: Select chunks that provide EXECUTABLE code for the query. "
+        f"Query: {query}\n"
+        "Chunks: ... "
+    )
+    ```
+    - Maintain `evaluate_rag(docs_path, query)` signature and return keys: `answer`, `contexts`.
+    - Keep `RAGSystem` class structure and lazy-loading in `__init__`.
+  include_artifacts: true
+
+database:
+  feature_dimensions: ["complexity", "combined_score"]
+  exploitation_ratio: 0.5
+  population_size: 20
+
+evaluator:
+  timeout: 1200
+  parallel_evaluations: 1
+  cascade_evaluation: false

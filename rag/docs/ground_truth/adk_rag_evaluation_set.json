@@ -10,7 +10,6 @@
         "mandatory_terms": [
             "Custom Agent",
             "BaseAgent",
-            "_run_async_impl",
             "deterministic"
         ],
         "penalized_terms": [
@@ -18,8 +17,11 @@
             "not possible",
             "limited",
             "LangGraph is better",
-            "ADK does not support"
-        ]
+            "ADK does not support",
+            "no control flow",
+            "only LLM-driven"
+        ],
+        "requires_code": false
     },
     {
         "query": "Explain how the ADK Runtime works and what the Event Loop pattern is.",
@@ -33,14 +35,15 @@
             "Runner",
             "yield",
             "Event",
-            "pause",
-            "resume"
+            "SessionService"
         ],
         "penalized_terms": [
             "direct execution",
+            "synchronous",
             "agent.run(",
             "agent.invoke("
-        ]
+        ],
+        "requires_code": false
     },
     {
         "query": "What are the different types of workflow agents in Google ADK and when should I use each?",
@@ -56,13 +59,18 @@
             "SequentialAgent",
             "LoopAgent",
             "ParallelAgent",
-            "deterministic"
+            "deterministic",
+            "sub_agents"
         ],
         "penalized_terms": [
             "I don't know",
             "not available",
-            "LLM-powered workflow"
-        ]
+            "LLM-powered workflow",
+            "graph",
+            "node",
+            "edge"
+        ],
+        "requires_code": false
     },
     {
         "query": "Show me how to correctly create a FunctionTool from a Python function in Google ADK.",
@@ -73,14 +81,16 @@
         ],
         "mandatory_terms": [
             "FunctionTool",
-            "func="
+            "func=",
+            "google.adk.tools"
         ],
         "penalized_terms": [
-            "name=",
             "FunctionTool(name=",
             "FunctionTool(\"",
-            "Tool(name="
-        ]
+            "Tool(name=",
+            "@tool"
+        ],
+        "requires_code": true
     },
     {
         "query": "Write complete Python code to run an LlmAgent that answers questions. Include all necessary imports and the correct way to execute the agent.",
@@ -97,15 +107,19 @@
             "InMemorySessionService",
             "session_service",
             "google.adk.runners",
-            "google.adk.sessions"
+            "google.adk.sessions",
+            "Content"
         ],
         "penalized_terms": [
             "agent.run(",
             "agent.invoke(",
             "agent.chat(",
             "agent.execute(",
-            "qa_agent.run("
-        ]
+            "qa_agent.run(",
+            "agent.generate(",
+            "from langchain"
+        ],
+        "requires_code": true
     },
     {
         "query": "Write Python code for a Custom Agent that routes to different sub-agents based on a value in session state.",
@@ -118,17 +132,18 @@
             "BaseAgent",
             "_run_async_impl",
             "InvocationContext",
-            "ctx.session.state.get",
+            "ctx.session.state",
             "run_async",
             "async for event in",
             "yield event"
         ],
         "penalized_terms": [
-            ".run(",
             ".invoke(",
+            ".execute(",
             "return agent_a",
-            "agent_a.execute("
-        ]
+            "from langchain"
+        ],
+        "requires_code": true
     },
     {
         "query": "How do I create a tool that modifies session state? Show me Python code with ToolContext.",
@@ -140,13 +155,16 @@
         "mandatory_terms": [
             "tool_context: ToolContext",
             "tool_context.state",
-            "google.adk.tools"
+            "google.adk.tools",
+            "FunctionTool"
         ],
         "penalized_terms": [
             "ctx: InvocationContext",
             "global state",
-            "session.state ="
-        ]
+            "retrieved_session.state",
+            "FunctionTool(name="
+        ],
+        "requires_code": true
     },
     {
         "query": "Write a complete ADK script with a SequentialAgent pipeline that has three LlmAgents passing data via output_key, and run it with the Runner.",
@@ -163,14 +181,17 @@
             "sub_agents",
             "Runner",
             "InMemorySessionService",
-            "{generated_code}",
-            "{review_comments}"
+            "LlmAgent",
+            "instruction"
         ],
         "penalized_terms": [
             "pipeline.run(",
             "pipeline.execute(",
-            "agent.invoke("
-        ]
+            "pipeline.invoke(",
+            "agent.invoke(",
+            "from langchain"
+        ],
+        "requires_code": true
     },
     {
         "query": "How do I implement a retry loop in a LoopAgent that exits early when a condition is met? Show Python code using escalate.",
@@ -184,13 +205,19 @@
             "LoopAgent",
             "tool_context.actions.escalate",
             "max_iterations",
-            "FunctionTool"
+            "FunctionTool",
+            "sub_agents",
+            "ToolContext"
         ],
         "penalized_terms": [
             "max_retries=",
             "loop.break(",
-            "return False"
-        ]
+            "return False",
+            "loop.run(",
+            "while True",
+            "while not done"
+        ],
+        "requires_code": true
     },
     {
         "query": "Write Python code for a Custom Agent that orchestrates a story generation workflow: generate story, check tone, and regenerate if tone is negative. Include proper imports and the _run_async_impl method.",
@@ -207,14 +234,16 @@
             "run_async",
             "ctx.session.state",
             "yield event",
-            "for",
-            "range"
+            "google.adk.events"
         ],
         "penalized_terms": [
-            "story_generator.run(",
             "story_generator.invoke(",
+            "story_generator.execute(",
             "def run(",
-            "return event"
-        ]
+            "return event",
+            "SequentialAgent",
+            "from langchain"
+        ],
+        "requires_code": true
     }
 ]

@@ -2699,7 +2699,1064 @@ with the improved one
 
 if needed
 
+____
+
+
+I need a robust python class that, in a string LLM answer, searchs for python-code snippets and extract them robustly.
+It should be able to recognize whether the response contains python code or not and, if it does, extract it robustly
+
+Your tasks are:
+
+1- Determine where in my project is the best place to create the script with the class
+2- Create it robustly
+3- Create tests for it
+
+____
+
+I need a new robust class that automatically check Python code snippets for basic errors (imports + class instantiation), but not run long-running parts.
+
+Your tasks are:
+
+1- Determine where in my project is the best place to create the script with the class
+2- Study these examples in case they help
+
+EXAMPLE 1
+
+import ast
+import sys
+
+class PartialExecutor:
+    def __init__(self):
+        self.execution_globals = {}
+
+    def execute_imports_and_instantiation(self, code_string):
+        """
+        Parses code_string and executes only imports and likely class instantiations.
+        """
+        try:
+            tree = ast.parse(code_string)
+        except SyntaxError as e:
+            return f"Syntax Error: {e}"
+
+        errors = []
+
+        # We iterate over top-level nodes in the script
+        for node in tree.body:
+            try:
+                # 1. Handle Imports
+                if isinstance(node, (ast.Import, ast.ImportFrom)):
+                    self._execute_node(node)
+
+                # 2. Handle Assignments (potential instantiations)
+                elif isinstance(node, ast.Assign):
+                    if self._is_likely_instantiation(node):
+                        self._execute_node(node)
+                    else:
+                        print(f"Skipping assignment (complex or not an instantiation): line {node.lineno}")
+
+                # 3. Skip loops, function defs, regular function calls, etc.
+                else:
+                    pass
+
+            except Exception as e:
+                errors.append(f"Error on line {node.lineno}: {e}")
+
+        if not errors:
+            return "Success: Imports and Instantiations ran without error."
+        return "\n".join(errors)
+
+    def _is_likely_instantiation(self, node):
+        """
+        Heuristic to check if an assignment looks like: variable = ClassName(...)
+        """
+        # node.value is the right-hand side of the assignment
+        if isinstance(node.value, ast.Call):
+            # Check if the caller is a Name (e.g. 'MyClass') rather than an attribute (e.g. 'module.func')
+            # This is a basic heuristic; you might want to allow attributes like 'pd.DataFrame()'
+            func = node.value.func
+            if isinstance(func, ast.Name):
+                 # Often classes are Capitalized, functions are snake_case.
+                 # This is a loose convention check, optional:
+                 if func.id[0].isupper():
+                     return True
+
+            if isinstance(func, ast.Attribute):
+                 # Handle cases like 'sklearn.linear_model.LogisticRegression()'
+                 return True
+
+        return False
+
+    def _execute_node(self, node):
+        """
+        Compiles and executes a single AST node.
+        """
+        # Wrap the node in a Module to make it compilable
+        wrapper = ast.Module(body=[node], type_ignores=[])
+
+        # Compile and exec
+        code_obj = compile(wrapper, filename="<string>", mode="exec")
+        exec(code_obj, self.execution_globals)
+
+        # Print for visualization (optional)
+        print(f"Executed line {node.lineno}: {ast.unparse(node)}")
+
+# --- Example Usage ---
+
+llm_code = """
+import numpy as np
+import time
+from sklearn.linear_model import LogisticRegression
+
+# This instantiation should run
+model = LogisticRegression()
+
+# This is a function call or long process, we want to skip this
+time.sleep(10)
+
+# Another instantiation
+data = np.array([1, 2, 3])
+
+print("Finished training")
+"""
+
+executor = PartialExecutor()
+result = executor.execute_imports_and_instantiation(llm_code)
+
+print("\n--- Final Report ---")
+print(result)
+
+EXAMPLE 2
+
+import ast
+import importlib
+import inspect
+from typing import Any, Dict
+
+
+class PythonSnippetTester:
+    def __init__(self, code: str):
+        self.code = code
+        self.tree = ast.parse(code)
+
+    def get_imports(self):
+        imports = []
+        for node in ast.walk(self.tree):
+            if isinstance(node, ast.Import):
+                for alias in node.names:
+                    imports.append(alias.name)
+            elif isinstance(node, ast.ImportFrom):
+                imports.append(node.module)
+        return set(imports)
+
+    def try_imports(self) -> Dict[str, Any]:
+        results = {}
+        for module_name in self.get_imports():
+            try:
+                results[module_name] = importlib.import_module(module_name)
+            except Exception as exc:
+                results[module_name] = exc
+        return results
+
+    def get_class_names(self):
+        classes = set()
+        for node in ast.walk(self.tree):
+            if isinstance(node, ast.Call):
+                if isinstance(node.func, ast.Name):
+                    classes.add(node.func.id)
+                elif isinstance(node.func, ast.Attribute):
+                    classes.add(node.func.attr)
+        return classes
+
+    def try_instantiation(self, module_map: Dict[str, Any]) -> Dict[str, Any]:
+        results = {}
+        for class_name in self.get_class_names():
+            # skip builtins
+            if class_name in ("print", "dict", "list", "set"):
+                continue
+            for m in module_map.values():
+                if hasattr(m, class_name):
+                    cls = getattr(m, class_name)
+                    try:
+                        sig = inspect.signature(cls)
+                        # instantiate only if no required params
+                        if all(
+                            p.default is not inspect._empty
+                            or p.kind == inspect.Parameter.VAR_POSITIONAL
+                            or p.kind == inspect.Parameter.VAR_KEYWORD
+                            for p in sig.parameters.values()
+                        ):
+                            results[class_name] = cls()  # instantiate
+                        else:
+                            results[class_name] = "SKIPPED(required args)"
+                    except Exception as exc:
+                        results[class_name] = exc
+        return results
+
+    def test(self):
+        imports = self.try_imports()
+        classes = self.try_instantiation(imports)
+        return {"imports": imports, "classes": classes}
+
+
+3- Create new class robustly
+4- Install new packages if needed
+5- Create tests for it
+
+____
+
+Improve each entry in
+
+/home/erick/repo/google_adk_chatbot/rag/docs/ground_truth/adk_rag_evaluation_set.json
+
+in order to add a new boolean field for each one that says if it is mandatory/optional for a good answer to include python code
+__
+
+My goal is to change
+The way to compute metrics in
+
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/1/evaluator.py
+
+in order to use
+
+/home/erick/repo/google_adk_chatbot/rag/docs/ground_truth/adk_rag_evaluation_set.json
+
+As the ground-truth file
+
+The
+
+/home/erick/repo/google_adk_chatbot/rag/adk_rag/utils.py
+
+For this:
+
+Deterministic part of the combined_score:
+1- Score is rewarded per each mandatory_terms that the response contains
+2- Score is penalized per each penalized_terms that the response contains
+3- If requires_code is True and the response does not contains python code, is penalized
+4- If requires_code is True and the response does contains python code, is rewarded
+5- If requires_code is False and the response does contains python code, is rewarded (encourages examples)
+6- Automatically check Python code snippets for basic errors (imports + class instantiation), but not run long-running parts. Penalize for errors and pass error text to openevolve artifacts
 
 
 
+LLM part of the combined_score:
+I want to use only one LLM-based, not-ground-truth, evidently metric per each entry.
+I think I got to pick the best one of:
+ContextRelevance
+FaithfulnessLLMEval
 
+or both
+
+Your tasks are:
+
+1- Study
+/home/erick/repo/google_adk_chatbot/rag/docs/evidently/examples-LLM_rag_evals.md
+
+in order to decide the evidently metric
+
+2- Create a robust, step-by-step, plan to change the evaluator
+You may use utils in
+
+/home/erick/repo/google_adk_chatbot/rag/adk_rag/utils.py
+
+to extract and execute python code
+
+Also, analyze carefully what weights each reward/penalization should have according to their importance
+
+____
+
+Your task is to carefully analyze
+
+"mandatory_terms" and "penalized_terms"  in
+
+/home/erick/repo/google_adk_chatbot/rag/docs/ground_truth/adk_rag_evaluation_set.json
+
+And contrast them with their appearance in docs
+
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs
+
+You should answer the following questions:
+
+1- Is there any mandatory term that could wrongly penalized the RAG because is not really needed in a good answer ?
+
+2- Is there any penalized term that could wrongly penalized the RAG because it could be included in a good answer ?
+
+3- Am I missing some terms per entry that could make my RAG evaluation more robust ?
+
+______________________________________
+
+openevolve-run /home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/1/initial_program.py \
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/1/evaluator.py \
+--config /home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/1/config.yaml \
+--iterations 1
+
+
+____
+Analyze if I should improve
+
+system_message
+
+in
+
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/1/config.yaml
+
+in order to encourage experimenting with custom chunking and/or retrieval-reranking laws
+and if I should give a small example of reranking or even adding a reranker to initial program
+
+And explicitly tell the LLM how he can change it to experiment
+
+Please, study here
+
+/home/erick/repo/google_adk_chatbot/rag/docs/langchain/Cohere reranker - Docs by LangChain.pdf
+/home/erick/repo/google_adk_chatbot/rag/docs/langchain/Contextual AI Reranker - Docs by LangChain.pdf
+/home/erick/repo/google_adk_chatbot/rag/docs/langchain/FlashRank reranker - Docs by LangChain.pdf
+
+
+____
+
+Investigate what is the use of this folder:
+
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs/.faiss_index
+
+Should I remove it at the end of each evaluator's evaluate execution in order to be recreated by next candidate ?
+
+How do the experiment ensure each openevolve candidate creates its own vector DB ?
+
+____
+Investigate here
+
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/1/openevolve_output/logs/openevolve_20260127_130404.log
+
+for other errors the run could have
+
+____
+
+The current run
+
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/1/openevolve_output/logs/openevolve_20260127_132256.log
+
+seems stuck. I do not know why.
+Your task is to investigate that file, specially its tail and give me your best hypothesis of what is happening
+
+____
+
+I retried run and got this weird message:
+
+Error submitting iteration 7: A child process terminated abruptly, the process pool is not usable anymore
+
+Seems after evolved iteration 1, it was not able to iterate more because of a required process that terminated.
+
+Investigate carefully reasons here:
+
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/1/openevolve_output/logs/openevolve_20260127_141416.log
+
+
+
+____
+
+the error repeated in last run:
+
+A child process terminated abruptly, the process pool is not usable anymore
+
+Check logs file including new debug prints and give me a new strong theory of what is happening:
+
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/1/openevolve_output/logs/openevolve_20260127_144122.log
+
+____
+
+
+Evaluate carefully which solution is better:
+
+1- Your last suggestion
+2- Removing all heavy rerankers from initial_program and suggestions for LLM in system_message and only encourage custom ad-hoc reranking laws
+
+____
+
+I tried with solution 1
+
+and error repeated, as you can see here:
+
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/1/openevolve_output/logs/openevolve_20260127_150154.log
+
+Give me your best recommendation
+
+____
+
+My goal is to create a new experiment in
+
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/2
+
+but replacing
+
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/2/initial_program.py
+
+With an Agno's RAG pipeline and replacing system_message in
+
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/2/config.yaml
+
+with the adequate new instructions.
+
+For this, we have to keep in mind that Agno is a framework quite less known than Langchain and LLMs are more prone to hallucinate when suggesting evolved candidates.
+
+That is why we need to be careful in system message:
+
+- Not too much explanation is needed for hyperparameter exploration (like, for example, changing chunk size and other similar),  new-prompt exploration, and creating new python laws
+- Any sugegstion that encourages using a different tool from Agno requires clear examples of import/signature ini system message.
+
+
+Your tasks are:
+
+1- Study Agno's RAG docs in:
+
+/home/erick/repo/google_adk_chatbot/rag/docs/pure_rag_examples/basics-knowledge-agents-usage-agentic-rag-lancedb.md
+/home/erick/repo/google_adk_chatbot/rag/docs/pure_rag_examples/basics-knowledge-agents-usage-agentic-rag-pgvector.md
+/home/erick/repo/google_adk_chatbot/rag/docs/pure_rag_examples/basics-knowledge-agents-usage-agentic-rag-with-reranking.md
+/home/erick/repo/google_adk_chatbot/rag/docs/pure_rag_examples/basics-knowledge-agents-usage-rag-sentence-transformer.md
+/home/erick/repo/google_adk_chatbot/rag/docs/pure_rag_examples/basics-knowledge-agents-usage-rag-with-lance-db-and-sqlite.md
+/home/erick/repo/google_adk_chatbot/rag/docs/pure_rag_examples/basics-knowledge-agents-usage-traditional-rag-lancedb.md
+/home/erick/repo/google_adk_chatbot/rag/docs/pure_rag_examples/basics-knowledge-agents-usage-traditional-rag-pgvector.md
+/home/erick/repo/google_adk_chatbot/rag/docs/pure_rag_examples/basics-knowledge-teams-usage-coordinated-agentic-rag.md
+/home/erick/repo/google_adk_chatbot/rag/docs/pure_rag_examples/basics-knowledge-teams-usage-coordinated-reasoning-rag.md
+/home/erick/repo/google_adk_chatbot/rag/docs/pure_rag_examples/basics-knowledge-teams-usage-distributed-rag-lancedb.md
+/home/erick/repo/google_adk_chatbot/rag/docs/pure_rag_examples/basics-knowledge-teams-usage-distributed-rag-pgvector.md
+/home/erick/repo/google_adk_chatbot/rag/docs/pure_rag_examples/basics-knowledge-teams-usage-distributed-rag-with-reranking.md
+
+2- Create what you think is the best pipeline for Agno's initial program.
+3- Implement, robustly, step by step, the new openevolve experiment in
+
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/2
+
+______________________________________
+
+openevolve-run /home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/2/initial_program.py \
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/2/evaluator.py \
+--config /home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/2/config.yaml \
+--iterations 1
+
+_
+
+I've run
+
+
+openevolve-run /home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/2/initial_program.py \
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/2/evaluator.py \
+--config /home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/2/config.yaml \
+--iterations 1
+
+And get connection errors as you can check here
+
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/2/openevolve_output/logs/openevolve_20260127_224322.log
+
+Investigate why
+
+____
+I've identify the real problem
+
+the pipeline in
+
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/2/initial_program.py
+
+is not expecting markdown files, but urls
+
+Your tasks are:
+
+1- Study
+
+/home/erick/repo/google_adk_chatbot/rag/docs/agno/Markdown Reader - Agno.pdf
+
+2- Fix ingestion in
+
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/2/initial_program.py
+
+____
+
+Let's try a different approach to build the openevolve experiment in
+
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/2
+
+The following files:
+
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/best_so_far/old_adk_chatbot/knowledge_base.py
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/best_so_far/old_adk_chatbot/rag_tool.py
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/best_so_far/old_adk_chatbot/run_ingestion.py
+
+contain a pipeline result of a previous openevolve experiment, but with ingestion separated from retrieval, and sql persistence of vector DB (which is not needed for openevolve)
+
+Your task is to replace code in
+
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/2/initial_program.py
+
+to implement a new initial program based on the above files. For this:
+
+1- Replace the MarkdownReader-based chunk ingestion by the custom ingestion in
+
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/best_so_far/old_adk_chatbot/run_ingestion.py
+
+adapted to be easily evolved by LLM in initial program
+
+2- Replace the knowledge vector DB ny the one in
+
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/best_so_far/old_adk_chatbot/knowledge_base.py
+
+Remove the optional cohere reranker. Give the LLM the option to create a custom reranker or not in code
+
+3- Learn the query and retrieval from
+
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/best_so_far/old_adk_chatbot/rag_tool.py
+
+
+/home/erick/repo/google_adk_chatbot/rag/docs/langchain/rank-bm25 · PyPI.pdf
+/home/erick/repo/google_adk_chatbot/rag/docs/agno/Building Custom Rerankers - LanceDB.pdf
+
+
+____
+
+
+Your task is improving system_message in
+
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/2/config.yaml
+
+for the current initial_program
+
+For this:
+
+- Encourage custom chunking laws and query augmentations
+- Encourage custom query augmentations
+- Encourage improving rag agent prompt, even adding custom skills or snippets to avoid google-adk code hallucinations
+- Encourage improving reranking with strictly two options
+
+1- Using custom rerankers compatible with lancedb
+
+For this, read the example here
+
+/home/erick/repo/google_adk_chatbot/rag/docs/agno/Building Custom Rerankers - LanceDB.pdf
+
+and give the LLM a code snippet as example
+
+2- Using rank-bm25. For this, read the example here
+
+/home/erick/repo/google_adk_chatbot/rag/docs/langchain/rank-bm25 · PyPI.pdf
+
+and give the LLM a code snippet as example. I guess it has to be built as custom reranker too because there is no default rank-bm25 in lancedb
+
+- Remove no needed mentions of langchain and extra verbosity
+
+
+____
+
+Make a small improvement in
+
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/2/evaluator.py
+
+so it includes code errors in dictionary returned by evaluate. I guess it can be None or a list of errors
+
+____
+
+openevolve-run /home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/2/initial_program.py \
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/2/evaluator.py \
+--config /home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/2/config.yaml \
+--iterations 1
+____
+
+
+I ran
+
+openevolve-run /home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/2/initial_program.py \
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/2/evaluator.py \
+--config /home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/2/config.yaml \
+--iterations 1
+
+And got:
+
+2026-01-28 14:12:14,669 - DEBUG - Using selector: EpollSelector
+Traceback (most recent call last):
+  File "/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/2/evaluator.py", line 193, in evaluate
+    dataset = Dataset.from_pandas(df, descriptors=[faithfulness, relevance])
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/evidently/core/datasets.py", line 1271, in from_pandas
+    dataset.add_descriptors(descriptors, options)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/evidently/core/datasets.py", line 1382, in add_descriptors
+    self.add_descriptor(descriptor, options)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/evidently/core/datasets.py", line 1688, in add_descriptor
+    new_columns = descriptor.generate_data(self, Options.from_any_options(options))
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/evidently/core/datasets.py", line 1099, in generate_data
+    feature = self.feature.generate_features_renamed(
+        dataset.as_dataframe(),
+        create_data_definition(None, dataset.as_dataframe(), ColumnMapping()),
+        options,
+    )
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/evidently/legacy/features/generated_features.py", line 56, in generate_features_renamed
+    features = self.generate_features(data, data_definition, options)
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/evidently/legacy/features/llm_judge.py", line 54, in generate_features
+    result: Union[List, Dict] = self.get_llm_wrapper(options).run_batch_sync(
+                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        requests=self.template.iterate_messages(data, self.get_input_columns())
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/evidently/legacy/utils/sync.py", line 68, in sync_call
+    return async_to_sync(f(*args, **kwargs))
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/evidently/legacy/utils/sync.py", line 60, in async_to_sync
+    return new_loop.run_until_complete(awaitable)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "/home/erick/anaconda3/lib/python3.13/asyncio/base_events.py", line 725, in run_until_complete
+    return future.result()
+           ~~~~~~~~~~~~~^^
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/evidently/llm/utils/wrapper.py", line 360, in run_batch
+    return await self._batch(self._run, rs, batch_size, limits)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/evidently/llm/utils/wrapper.py", line 283, in _batch
+    return await asyncio.gather(*[work(batch) for batch in batches])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/evidently/llm/utils/wrapper.py", line 279, in work
+    res = await coro(request.request)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/evidently/llm/utils/wrapper.py", line 341, in _run
+    raise error
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/evidently/llm/utils/wrapper.py", line 335, in _run
+    response = await self.complete(request.messages)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/evidently/llm/utils/wrapper.py", line 545, in complete
+    response: ChatCompletion = await self.client.chat.completions.create(
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        model=self.model, messages=messages, seed=seed
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )  # type: ignore[arg-type]
+    ^
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/openai/resources/chat/completions/completions.py", line 2678, in create
+    return await self._post(
+           ^^^^^^^^^^^^^^^^^
+    ...<49 lines>...
+    )
+    ^
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/openai/_base_client.py", line 1797, in post
+    return await self.request(cast_to, opts, stream=stream, stream_cls=stream_cls)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/openai/_base_client.py", line 1497, in request
+    self._platform = await asyncify(get_platform)()
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/openai/_utils/_sync.py", line 56, in wrapper
+    return await to_thread(function, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/openai/_utils/_sync.py", line 20, in to_thread
+    return await asyncio.to_thread(func, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/erick/anaconda3/lib/python3.13/asyncio/threads.py", line 25, in to_thread
+    return await loop.run_in_executor(None, func_call)
+                 ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/home/erick/anaconda3/lib/python3.13/asyncio/base_events.py", line 901, in run_in_executor
+    executor.submit(func, *args), loop=self)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/home/erick/anaconda3/lib/python3.13/concurrent/futures/thread.py", line 173, in submit
+    raise RuntimeError('cannot schedule new futures after '
+                       'interpreter shutdown')
+RuntimeError: cannot schedule new futures after interpreter shutdown
+
+
+Investigate carefully the reasons
+
+
+____
+
+I am sure the problem is not in model name
+
+"gpt-4.1-nano" is correct because it worked fine in this evaluator:
+
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/1/evaluator.py
+
+Focus in finding a different cause of error in this evaluator
+
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/2/evaluator.py
+
+
+____
+
+The error happened again:
+
+Starting LLM evaluation (Evidently) for 10 samples...
+2026-01-28 15:39:27,630 - DEBUG - Using selector: EpollSelector
+Traceback (most recent call last):
+  File "/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/2/evaluator.py", line 193, in evaluate
+    dataset = Dataset.from_pandas(df, descriptors=[faithfulness, relevance])
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/evidently/core/datasets.py", line 1271, in from_pandas
+    dataset.add_descriptors(descriptors, options)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/evidently/core/datasets.py", line 1382, in add_descriptors
+    self.add_descriptor(descriptor, options)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/evidently/core/datasets.py", line 1688, in add_descriptor
+    new_columns = descriptor.generate_data(self, Options.from_any_options(options))
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/evidently/core/datasets.py", line 1099, in generate_data
+    feature = self.feature.generate_features_renamed(
+        dataset.as_dataframe(),
+        create_data_definition(None, dataset.as_dataframe(), ColumnMapping()),
+        options,
+    )
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/evidently/legacy/features/generated_features.py", line 56, in generate_features_renamed
+    features = self.generate_features(data, data_definition, options)
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/evidently/legacy/features/llm_judge.py", line 54, in generate_features
+    result: Union[List, Dict] = self.get_llm_wrapper(options).run_batch_sync(
+                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        requests=self.template.iterate_messages(data, self.get_input_columns())
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/evidently/legacy/utils/sync.py", line 68, in sync_call
+    return async_to_sync(f(*args, **kwargs))
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/evidently/legacy/utils/sync.py", line 60, in async_to_sync
+    return new_loop.run_until_complete(awaitable)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "/home/erick/anaconda3/lib/python3.13/asyncio/base_events.py", line 725, in run_until_complete
+    return future.result()
+           ~~~~~~~~~~~~~^^
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/evidently/llm/utils/wrapper.py", line 360, in run_batch
+    return await self._batch(self._run, rs, batch_size, limits)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/evidently/llm/utils/wrapper.py", line 283, in _batch
+    return await asyncio.gather(*[work(batch) for batch in batches])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/evidently/llm/utils/wrapper.py", line 279, in work
+    res = await coro(request.request)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/evidently/llm/utils/wrapper.py", line 341, in _run
+    raise error
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/evidently/llm/utils/wrapper.py", line 335, in _run
+    response = await self.complete(request.messages)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/evidently/llm/utils/wrapper.py", line 545, in complete
+    response: ChatCompletion = await self.client.chat.completions.create(
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        model=self.model, messages=messages, seed=seed
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )  # type: ignore[arg-type]
+    ^
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/openai/resources/chat/completions/completions.py", line 2678, in create
+    return await self._post(
+           ^^^^^^^^^^^^^^^^^
+    ...<49 lines>...
+    )
+    ^
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/openai/_base_client.py", line 1797, in post
+    return await self.request(cast_to, opts, stream=stream, stream_cls=stream_cls)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/openai/_base_client.py", line 1497, in request
+    self._platform = await asyncify(get_platform)()
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/openai/_utils/_sync.py", line 56, in wrapper
+    return await to_thread(function, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/openai/_utils/_sync.py", line 20, in to_thread
+    return await asyncio.to_thread(func, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/erick/anaconda3/lib/python3.13/asyncio/threads.py", line 25, in to_thread
+    return await loop.run_in_executor(None, func_call)
+                 ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/home/erick/anaconda3/lib/python3.13/asyncio/base_events.py", line 901, in run_in_executor
+    executor.submit(func, *args), loop=self)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/home/erick/anaconda3/lib/python3.13/concurrent/futures/thread.py", line 173, in submit
+    raise RuntimeError('cannot schedule new futures after '
+                       'interpreter shutdown')
+RuntimeError: cannot schedule new futures after interpreter shutdown
+Debug: Cleaning up memory (gc.collect)...
+
+
+I am sure is note the model name and, also, your last fix did not help.
+It happens only with the Evidently part
+Your tasks are:
+
+1- Compare carefully the evidently part here:
+
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/1/evaluator.py
+
+which runs with no error
+
+to the evidently part here
+
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/2/evaluator.py
+
+which raises the error.
+2- Give me a strong theory of why the error happens.
+3- Write a new script to test your theory only testing the Evidently part, not running the whole evaluator
+
+____
+
+The error repeated
+
+2026-01-28 19:02:07,712 - DEBUG - receive_response_body.started request=<Request [b'POST']> stream_id=1
+2026-01-28 19:02:07,712 - DEBUG - receive_response_body.complete
+2026-01-28 19:02:07,712 - DEBUG - response_closed.started stream_id=1
+2026-01-28 19:02:07,712 - DEBUG - response_closed.complete
+2026-01-28 19:02:07,713 - DEBUG - close.started
+2026-01-28 19:02:07,713 - DEBUG - close.complete
+  - Answer received (4787 chars)
+  - Retrieved 10 contexts
+  - Deterministic Score: 0.60 (Terms: 8/8)
+Debug: Clearing candidate cache to release background threads...
+2026-01-28 19:02:07,994 - DEBUG - close.started
+2026-01-28 19:02:07,994 - DEBUG - close.complete
+
+Starting LLM evaluation (Evidently) for 10 samples...
+2026-01-28 19:02:08,409 - DEBUG - Using selector: EpollSelector
+Traceback (most recent call last):
+  File "/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/2/evaluator.py", line 197, in evaluate
+    dataset = Dataset.from_pandas(df, descriptors=[faithfulness, relevance])
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/evidently/core/datasets.py", line 1271, in from_pandas
+    dataset.add_descriptors(descriptors, options)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/evidently/core/datasets.py", line 1382, in add_descriptors
+    self.add_descriptor(descriptor, options)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/evidently/core/datasets.py", line 1688, in add_descriptor
+    new_columns = descriptor.generate_data(self, Options.from_any_options(options))
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/evidently/core/datasets.py", line 1099, in generate_data
+    feature = self.feature.generate_features_renamed(
+        dataset.as_dataframe(),
+        create_data_definition(None, dataset.as_dataframe(), ColumnMapping()),
+        options,
+    )
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/evidently/legacy/features/generated_features.py", line 56, in generate_features_renamed
+    features = self.generate_features(data, data_definition, options)
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/evidently/legacy/features/llm_judge.py", line 54, in generate_features
+    result: Union[List, Dict] = self.get_llm_wrapper(options).run_batch_sync(
+                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        requests=self.template.iterate_messages(data, self.get_input_columns())
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/evidently/legacy/utils/sync.py", line 68, in sync_call
+    return async_to_sync(f(*args, **kwargs))
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/evidently/legacy/utils/sync.py", line 60, in async_to_sync
+    return new_loop.run_until_complete(awaitable)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "/home/erick/anaconda3/lib/python3.13/asyncio/base_events.py", line 725, in run_until_complete
+    return future.result()
+           ~~~~~~~~~~~~~^^
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/evidently/llm/utils/wrapper.py", line 360, in run_batch
+    return await self._batch(self._run, rs, batch_size, limits)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/evidently/llm/utils/wrapper.py", line 283, in _batch
+    return await asyncio.gather(*[work(batch) for batch in batches])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/evidently/llm/utils/wrapper.py", line 279, in work
+    res = await coro(request.request)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/evidently/llm/utils/wrapper.py", line 341, in _run
+    raise error
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/evidently/llm/utils/wrapper.py", line 335, in _run
+    response = await self.complete(request.messages)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/evidently/llm/utils/wrapper.py", line 545, in complete
+    response: ChatCompletion = await self.client.chat.completions.create(
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        model=self.model, messages=messages, seed=seed
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )  # type: ignore[arg-type]
+    ^
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/openai/resources/chat/completions/completions.py", line 2678, in create
+    return await self._post(
+           ^^^^^^^^^^^^^^^^^
+    ...<49 lines>...
+    )
+    ^
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/openai/_base_client.py", line 1797, in post
+    return await self.request(cast_to, opts, stream=stream, stream_cls=stream_cls)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/openai/_base_client.py", line 1497, in request
+    self._platform = await asyncify(get_platform)()
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/openai/_utils/_sync.py", line 56, in wrapper
+    return await to_thread(function, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/erick/repo/google_adk_chatbot/venv/lib/python3.13/site-packages/openai/_utils/_sync.py", line 20, in to_thread
+    return await asyncio.to_thread(func, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/erick/anaconda3/lib/python3.13/asyncio/threads.py", line 25, in to_thread
+    return await loop.run_in_executor(None, func_call)
+                 ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/home/erick/anaconda3/lib/python3.13/asyncio/base_events.py", line 901, in run_in_executor
+    executor.submit(func, *args), loop=self)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/home/erick/anaconda3/lib/python3.13/concurrent/futures/thread.py", line 173, in submit
+    raise RuntimeError('cannot schedule new futures after '
+                       'interpreter shutdown')
+RuntimeError: cannot schedule new futures after interpreter shutdown
+Debug: Cleaning up memory (gc.collect)...
+
+
+I see it only in console.
+openevolve logging is not able to catch it as you see in tail of
+
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/2/openevolve_output/logs/openevolve_20260128_172627.log
+
+
+This problem is hard to solve
+Design a robust plan of diagnosis.
+
+__
+
+
+I am also thinking on changing Temporarly the rag target folder to this one
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_doc_0
+
+that contains only one markdown file
+
+does it make sense?
+
+____
+
+Let's focus in this experiment:
+
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/3/config.yaml
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/3/evaluator.py
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/3/initial_program.py
+
+Your task is modify evaluator only to ensure the error code is included in output dictionary of evaluate
+
+__
+
+Your task is remove every non-deterministic parts (evidently) from combined_score calculation in
+
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/2/evaluator.py
+
+Keep only deterministic scores (error code, mandatory and penalized terms)
+
+____
+
+Your task is improving system_message in
+
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/3/config.yaml
+
+for the current initial_program
+
+For this:
+
+- Encourage custom chunking laws and query augmentations
+- Encourage custom query augmentations and/or logic
+- Encourage improving rag agent prompt, even adding custom skills or snippets to avoid google-adk code hallucinations
+- Encourage improving reranking, either with custom python law or using bm25
+
+Learn from docs example:
+
+from rank_bm25 import BM25Okapi
+
+corpus = [
+    "Hello there good man!",
+    "It is quite windy in London",
+    "How is the weather today?"
+]
+
+tokenized_corpus = [doc.split(" ") for doc in corpus]
+
+bm25 = BM25Okapi(tokenized_corpus)
+# <rank_bm25.BM25Okapi at 0x1047881d0>
+
+Note that this package doesn't do any text preprocessing. If you want to do things like lowercasing, stopword removal, stemming, etc, you need to do it yourself.
+
+The only requirements is that the class receives a list of lists of strings, which are the document tokens.
+Ranking of documents
+
+Now that we've created our document indexes, we can give it queries and see which documents are the most relevant:
+
+query = "windy London"
+tokenized_query = query.split(" ")
+
+doc_scores = bm25.get_scores(tokenized_query)
+# array([0.        , 0.93729472, 0.        ])
+
+Good to note that we also need to tokenize our query, and apply the same preprocessing steps we did to the documents in order to have an apples-to-apples comparison
+
+Instead of getting the document scores, you can also just retrieve the best documents with
+
+bm25.get_top_n(tokenized_query, corpus, n=1)
+# ['It is quite windy in London']
+
+- Remove extra verbosity
+
+CAUTION: you may only modify system_message in
+
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/3/config.yaml
+
+____
+
+
+openevolve-run /home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/3/initial_program.py \
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/3/evaluator.py \
+--config /home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/3/config.yaml \
+--iterations 2
+
+
+I still see imported and used
+
+FaithfulnessLLMEval and ContextRelevance
+
+in
+
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/3/evaluator.py
+
+Did you really removed non-deterministic, evidently metrics from it ?
+
+____
+
+
+The openevolve experiment in
+
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/3/config.yaml
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/3/evaluator.py
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/3/initial_program.py
+
+Is not giving good results. I suspect that is due to a bad election of the initial_program to be evolved.
+
+Your tasks are:
+
+1- Study these research reports
+
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_rag_config_report.md
+/home/erick/repo/google_adk_chatbot/rag/docs/RAG for Code Documentation.docx
+
+2- Improve
+
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/3/initial_program.py
+
+to have a much better initial candidate to an optimum RAG pipeline that retrieves info from the markdown-file google-adk docs.
+Ensure to keep compatibility to current evaluator.
+
+____
+
+Your tasks are:
+
+1- Change the return dictionary in evaluate in
+
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/3/evaluator.py
+
+to the
+
+### Option 2: EvaluationResult (Recommended)
+
+in
+
+/home/erick/repo/google_adk_chatbot/rag/docs/llm_prompt_construction.md
+
+That clearly separate metrics from artifacts
+
+2- Include the whole bad code on artifacts when python code rises errors
+
+____
+
+Your tasks are:
+
+1- Review system_message in
+
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/3/config.yaml
+
+Keep in mind that is done for the previous version of
+
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/3/initial_program.py
+
+and it could have some suggestions that are not compatible to current version and/or there might be some new interesting suggestions for better evolving
+
+2- Think about the most robust improvements  you can suggest to system_message in order to maximize performance of evolved RAG pipeline
+
+3- Explain to me suggested changes
+
+4- Wait for my confirmation and implement changes only in system_message
