@@ -3954,7 +3954,20 @@ pip install .
 __
 
 
-I see
+I guess /home/erick/repo/google_adk_chatbot/scripts/run_adk_dev.sh cannot be run in windows environment. Am I right?
+
+I've created these alternatives for windows:
+
+/home/erick/repo/google_adk_chatbot/scripts/run_adk_dev.bat
+/home/erick/repo/google_adk_chatbot/scripts/run_adk_dev.ps1
+
+Your tasks are:
+
+1- Check them
+
+2- Update README for windows users
+
+Can we create a windows alternative and upload it to github ?
 
 
 

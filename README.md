@@ -44,8 +44,14 @@ Then connect your agent to `http://localhost:8001/sse` using any MCP-compatible 
 Run the complete chatbot system with a multi-agent pipeline that includes query planning, RAG retrieval, code validation, and answer synthesis.
 
 ```bash
-# Start both MCP server and ADK web interface
+# Linux/macOS
 bash scripts/run_adk_dev.sh
+
+# Windows (Command Prompt)
+scripts\run_adk_dev.bat
+
+# Windows (PowerShell)
+.\scripts\run_adk_dev.ps1
 ```
 
 Access the web interface at `http://localhost:8000`.
@@ -232,10 +238,17 @@ RootAgent (coordinator)
               └── SynthesizerAgent - Produces final answer
 ```
 
-Start the full system:
+### Start the full system:
 
 ```bash
+# Linux/macOS
 bash scripts/run_adk_dev.sh
+
+# Windows (Command Prompt)
+scripts\run_adk_dev.bat
+
+# Windows (PowerShell)
+.\scripts\run_adk_dev.ps1
 ```
 
 This launches:
