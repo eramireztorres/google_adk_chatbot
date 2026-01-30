@@ -2,10 +2,28 @@
 # Paths can be relative to this config file.
 docs_path: ../docs/adk_docs
 index_path: ./index
-chunk_size: 1000
-chunk_overlap: 250
+
+# Chunking settings
+chunk_size: 500
+chunk_overlap: 100
+
+# Hybrid retrieval settings
+top_k_vector: 20
+top_k_bm25: 20
+weight_vector: 0.5
+weight_bm25: 0.5
+use_hybrid_retrieval: true
+
+# Reranking settings
+rerank_top_n: 8
+use_llm_reranking: true
+
+# Legacy settings (for backward compatibility)
 top_k: 8
 fetch_k: 10
-embedding_model: text-embedding-3-small
+
+# Model settings
+embedding_model: text-embedding-3-large
 llm_model: gpt-4.1-mini
-temperature: 0.2
+rerank_model: gpt-4.1-mini
+temperature: 0.0

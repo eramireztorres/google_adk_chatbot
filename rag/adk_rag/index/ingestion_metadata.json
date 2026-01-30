@@ -1,0 +1,9 @@
+{
+  "chunk_count": 12597,
+  "parent_count": 2370,
+  "chunk_size": 500,
+  "chunk_overlap": 100,
+  "embedding_model": "text-embedding-3-small",
+  "use_hybrid_retrieval": true,
+  "docs_path": "/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs"
+}

@@ -75,6 +75,16 @@ def main() -> None:
     parser.add_argument("--llm-model", help="Override LLM model", default=None)
     parser.add_argument("--embedding-model", help="Override embedding model", default=None)
     parser.add_argument("--temperature", type=float, help="Override model temperature", default=None)
+    parser.add_argument(
+        "--no-hybrid",
+        action="store_true",
+        help="Disable hybrid retrieval (use legacy vector-only mode)",
+    )
+    parser.add_argument(
+        "--no-reranking",
+        action="store_true",
+        help="Disable LLM reranking",
+    )
     args = parser.parse_args()
 
     _config = load_config(args.config)
@@ -86,9 +96,21 @@ def main() -> None:
         _config.embedding_model = args.embedding_model
     if args.temperature is not None:
         _config.temperature = args.temperature
+    if args.no_hybrid:
+        _config.use_hybrid_retrieval = False
+    if args.no_reranking:
+        _config.use_llm_reranking = False
 
-    print(f"Starting ADK RAG MCP Server on {args.host}:{args.port}")
-    print(f"Using index path: {_config.index_path}")
+    print("=" * 50)
+    print("ADK RAG MCP Server")
+    print("=" * 50)
+    print(f"Host: {args.host}:{args.port}")
+    print(f"Index path: {_config.index_path}")
+    print(f"LLM model: {_config.llm_model}")
+    print(f"Embedding model: {_config.embedding_model}")
+    print(f"Hybrid retrieval: {_config.use_hybrid_retrieval}")
+    print(f"LLM reranking: {_config.use_llm_reranking}")
+    print("=" * 50)
     uvicorn.run(app, host=args.host, port=args.port)
 
 

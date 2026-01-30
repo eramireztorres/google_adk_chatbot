@@ -3760,3 +3760,68 @@ and it could have some suggestions that are not compatible to current version an
 3- Explain to me suggested changes
 
 4- Wait for my confirmation and implement changes only in system_message
+
+____
+
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/3/openevolve_output/best/best_program.py
+
+contains the prototype of a good RAG pipeline to retrieve info from
+
+/home/erick/repo/google_adk_chatbot/rag/docs/adk_docs
+
+The ingestion and retrieval scripts:
+
+/home/erick/repo/google_adk_chatbot/rag/run_adk_ingest.py
+/home/erick/repo/google_adk_chatbot/rag/run_adk_mcp_server.py
+
+are build for a different RAG pipeline
+
+I want to change it to the new RAG pipeline in
+
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/3/openevolve_output/best/best_program.py
+
+Your tasks are:
+
+1- Study new RAG pipeline
+
+/home/erick/repo/google_adk_chatbot/rag/openevolve_experiments/3/openevolve_output/best/best_program.py
+
+2- Study
+
+/home/erick/repo/google_adk_chatbot/rag/run_adk_ingest.py
+/home/erick/repo/google_adk_chatbot/rag/run_adk_mcp_server.py
+
+And dependencies
+
+3- Write a robust, step-by-step, plan to change the RAG pipeline to the new one, while keeping compatibility with MCP server execution.
+
+____
+
+
+I ran this
+
+(venv) (base) erick@erick-home:~/repo/google_adk_chatbot/rag$ python run_adk_ingest.py
+
+with no error
+
+But when I get the following errors:
+
+
+____
+
+
+  1. “Show me a Python example of an ADK LlmAgent that uses MCPToolset with SseConnectionParams to connect to a remote MCP server.”
+  2. “Give me a Python example that builds a SequentialAgent pipeline with two sub‑agents and passes data between them using output_key.”
+  3. “Provide Python code for a LoopAgent that refines a query up to 3 iterations, using one agent to query and another to critique.”
+  4. “Write a Python example that defines a custom FunctionTool with ToolContext, adds it to an LlmAgent, and runs the agent”
+  5. “Show Python code that uses generate_content_config to set temperature and response schema in an ADK agent.”
+  6. “Give a Python example of wiring before_model_callback and after_model_callback to log requests and responses.”
+  7. “Provide a Python snippet that creates an ADK agent and enables code execution with a built‑in code executor.”
+  8. “Show Python code that defines an ADK agent with MCPToolset using StdioConnectionParams to run an MCP server via npx.”
+  9. “Give Python code for an ADK agent that uses include_contents='none' and stores intermediate state in the session.”
+  10. “Provide a Python example that configures a simple ADK agent and runs it with a Runner (session creation + run).”
+
+______
+
+
+
