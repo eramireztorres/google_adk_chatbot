@@ -2,6 +2,27 @@
 
 A specialized assistant for [Google Agent Development Kit (ADK)](https://google.github.io/adk-docs/) documentation. This is **not a general-purpose chatbot** - it is purpose-built to provide accurate, grounded answers about Google ADK APIs, patterns, and best practices by retrieving information directly from the official documentation.
 
+## Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/eramireztorres/google_adk_chatbot.git
+cd google_adk_chatbot
+
+# Create and activate virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install the package
+pip install -e .
+```
+
+After installation, CLI commands are available:
+- `adk-rag-ingest` - Ingest documentation into the vector index
+- `adk-rag-server` - Start the RAG MCP server
+
+---
+
 ## What This Project Offers
 
 ### Option 1: RAG Pipeline via MCP Server (Use in Your Own Agent)
