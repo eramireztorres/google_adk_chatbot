@@ -3969,9 +3969,94 @@ Your tasks are:
 
 Can we create a windows alternative and upload it to github ?
 
+___________________
+
+My goal is to get ready the current repo to make it public, but I think current version of
+
+/home/erick/repo/google_adk_chatbot/README.md
+
+Is a bit messy still.
+These are my concerns:
+
+1- I think at least one the following 2 configs:
+
+### Minimal Configuration (Google Only)
+
+If you only have a Google API key:
+
+```bash
+GOOGLE_API_KEY=your-google-api-key
+GOOGLE_GENAI_USE_VERTEXAI=FALSE
+```
+
+This uses `gemini-2.5-flash-lite` for LLM and `models/text-embedding-004` for embeddings.
+
+### Minimal Configuration (OpenAI Only)
+
+If you only have an OpenAI API key:
+
+```bash
+OPENAI_API_KEY=your-openai-api-key
+GOOGLE_API_KEY=your-google-api-key
+GOOGLE_GENAI_USE_VERTEXAI=FALSE
+```
+
+This uses `gpt-4.1-mini` for LLM and `text-embedding-3-large` for embeddings.
+
+> **Note**: `GOOGLE_API_KEY` is still required for the ADK web interface, but the RAG system will use OpenAI.
+
+Has to be done before running
+
+python rag/run_adk_ingest.py
+
+2- I think running
+
+python rag/run_adk_ingest.py
+
+is mandatory at least once both before
+
+python rag/run_adk_mcp_server.py --port 8001
+
+and
+
+bash scripts/run_adk_dev.sh
+
+The way is written now seems
+
+```bash
+# Linux/macOS
+bash scripts/run_adk_dev.sh
+
+# Windows (Command Prompt)
+scripts\run_adk_dev.bat
+
+# Windows (PowerShell)
+.\scripts\run_adk_dev.ps1
+```
+
+is an alternative that does not need
 
 
+python rag/run_adk_ingest.py
 
+3- It's not clear for me that
+
+After installation, CLI commands are available:
+- `adk-rag-ingest` - Ingest documentation into the vector index
+- `adk-rag-server` - Start the RAG MCP server
+
+
+Are alternative to
+
+
+python rag/run_adk_ingest.py
+python rag/run_adk_mcp_server.py --port 8001
+
+
+Your tasks are:
+
+1- Investigate carefully the workflow
+2- Improve the order and content of confusing parts of README file
 
 
 
