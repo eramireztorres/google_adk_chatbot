@@ -42,6 +42,7 @@ def main() -> None:
     print("=" * 50)
     print("ADK RAG Ingestion")
     print("=" * 50)
+    print(f"Provider: {config.llm_provider}")
     print(f"Docs path: {config.docs_path}")
     print(f"Index path: {config.index_path}")
     print(f"Embedding model: {config.embedding_model}")

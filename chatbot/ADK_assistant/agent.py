@@ -38,17 +38,54 @@ def _configure_logging() -> None:
 _configure_logging()
 
 
-# Validating and resolving configuration
+# Default models per provider
+_PROVIDER_DEFAULTS = {
+    "google": "gemini-2.5-flash-lite",
+    "openai": "gpt-4.1-mini",
+}
+
+
+def _detect_llm_provider() -> str:
+    """
+    Auto-detect LLM provider based on available API keys.
+
+    Priority:
+    1. Explicit ADK_LLM_PROVIDER env var
+    2. If OPENAI_API_KEY is set -> openai
+    3. If GOOGLE_API_KEY is set -> google
+    4. Default to google (requires GOOGLE_API_KEY at runtime)
+    """
+    explicit = os.getenv("ADK_LLM_PROVIDER", "").strip().lower()
+    if explicit in ("google", "openai"):
+        return explicit
+
+    if os.getenv("OPENAI_API_KEY"):
+        return "openai"
+    if os.getenv("GOOGLE_API_KEY"):
+        return "google"
+
+    # Default to google - will fail at runtime if GOOGLE_API_KEY not set
+    return "google"
+
+
 def _resolve_llm_model() -> str | LiteLlm:
-    provider = os.getenv("ADK_LLM_PROVIDER", "openai").strip().lower()
-    model = os.getenv("ADK_LLM_MODEL", "gpt-4.1-mini").strip()
+    """Resolve LLM model based on provider detection."""
+    provider = _detect_llm_provider()
+    default_model = _PROVIDER_DEFAULTS.get(provider, "gemini-2.5-flash-lite")
+    model = os.getenv("ADK_LLM_MODEL", default_model).strip()
+
     if provider == "openai":
         return LiteLlm(model=f"openai/{model}")
+    # For Google, return the model name directly (ADK handles it natively)
     return model
 
+
 def _rag_mcp_url() -> str:
-    # Default to 8001 as in the original agent.py
-    return os.getenv("RAG_MCP_URL", "http://localhost:8001/sse").strip()
+    """Get RAG MCP URL with default port."""
+    port = os.getenv("MCP_PORT", "8001")
+    default_url = f"http://localhost:{port}/sse"
+    return os.getenv("RAG_MCP_URL", default_url).strip()
+
 
 model = _resolve_llm_model()
 rag_mcp_url = _rag_mcp_url()

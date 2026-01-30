@@ -22,8 +22,17 @@ use_llm_reranking: true
 top_k: 8
 fetch_k: 10
 
-# Model settings
-embedding_model: text-embedding-3-large
-llm_model: gpt-4.1-mini
-rerank_model: gpt-4.1-mini
+# Provider settings
+# Provider is auto-detected based on available API keys:
+# - If OPENAI_API_KEY is set -> uses OpenAI
+# - If only GOOGLE_API_KEY is set -> uses Google
+# Override with RAG_LLM_PROVIDER env var or set llm_provider here
+# llm_provider: google
+
+# Model settings (leave empty to use provider defaults)
+# Google defaults: gemini-2.5-flash-lite, models/text-embedding-004
+# OpenAI defaults: gpt-4.1-mini, text-embedding-3-large
+embedding_model: ""
+llm_model: ""
+rerank_model: ""
 temperature: 0.0

@@ -1,11 +1,49 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+import os
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict
 
 import yaml
-import os
+
+
+# Default models per provider
+PROVIDER_DEFAULTS = {
+    "google": {
+        "llm_model": "gemini-2.5-flash-lite",
+        "embedding_model": "models/text-embedding-004",
+        "rerank_model": "gemini-2.5-flash-lite",
+    },
+    "openai": {
+        "llm_model": "gpt-4.1-mini",
+        "embedding_model": "text-embedding-3-large",
+        "rerank_model": "gpt-4.1-mini",
+    },
+}
+
+
+def _detect_provider() -> str:
+    """
+    Auto-detect LLM provider based on available API keys.
+
+    Priority:
+    1. Explicit RAG_LLM_PROVIDER env var
+    2. If OPENAI_API_KEY is set -> openai
+    3. If GOOGLE_API_KEY is set -> google
+    4. Default to google (requires GOOGLE_API_KEY at runtime)
+    """
+    explicit = os.getenv("RAG_LLM_PROVIDER", "").strip().lower()
+    if explicit in ("google", "openai"):
+        return explicit
+
+    if os.getenv("OPENAI_API_KEY"):
+        return "openai"
+    if os.getenv("GOOGLE_API_KEY"):
+        return "google"
+
+    # Default to google - will fail at runtime if GOOGLE_API_KEY not set
+    return "google"
 
 
 @dataclass
@@ -30,10 +68,13 @@ class RAGConfig:
     top_k: int = 8
     fetch_k: int = 10
 
-    # Model settings
-    embedding_model: str = "text-embedding-3-large"
-    llm_model: str = "gpt-4.1-mini"
-    rerank_model: str = "gpt-4.1-mini"
+    # Provider settings
+    llm_provider: str = field(default_factory=_detect_provider)
+
+    # Model settings (defaults set based on provider in load_config)
+    embedding_model: str = ""
+    llm_model: str = ""
+    rerank_model: str = ""
     temperature: float = 0.0
 
     @classmethod
@@ -71,13 +112,39 @@ def load_config(config_path: str | None = None) -> RAGConfig:
     base_dir = path.parent
     cfg.docs_path = _resolve_path(cfg.docs_path, base_dir)
     cfg.index_path = _resolve_path(cfg.index_path, base_dir)
-    cfg.embedding_model = os.getenv("OPENAI_EMBEDDING_MODEL", cfg.embedding_model)
-    cfg.llm_model = os.getenv("OPENAI_LLM_MODEL", cfg.llm_model)
-    cfg.rerank_model = os.getenv("OPENAI_RERANK_MODEL", cfg.rerank_model)
 
-    if "OPENAI_TEMPERATURE" in os.environ:
+    # Re-detect provider (may have changed since dataclass init)
+    cfg.llm_provider = _detect_provider()
+
+    # Apply provider-specific defaults for empty model fields
+    provider_defaults = PROVIDER_DEFAULTS.get(cfg.llm_provider, PROVIDER_DEFAULTS["google"])
+
+    if not cfg.embedding_model:
+        cfg.embedding_model = provider_defaults["embedding_model"]
+    if not cfg.llm_model:
+        cfg.llm_model = provider_defaults["llm_model"]
+    if not cfg.rerank_model:
+        cfg.rerank_model = provider_defaults["rerank_model"]
+
+    # Environment variable overrides (provider-agnostic)
+    if os.getenv("RAG_EMBEDDING_MODEL"):
+        cfg.embedding_model = os.getenv("RAG_EMBEDDING_MODEL")
+    if os.getenv("RAG_LLM_MODEL"):
+        cfg.llm_model = os.getenv("RAG_LLM_MODEL")
+    if os.getenv("RAG_RERANK_MODEL"):
+        cfg.rerank_model = os.getenv("RAG_RERANK_MODEL")
+
+    # Legacy OpenAI env vars (for backward compatibility)
+    if os.getenv("OPENAI_EMBEDDING_MODEL") and cfg.llm_provider == "openai":
+        cfg.embedding_model = os.getenv("OPENAI_EMBEDDING_MODEL")
+    if os.getenv("OPENAI_LLM_MODEL") and cfg.llm_provider == "openai":
+        cfg.llm_model = os.getenv("OPENAI_LLM_MODEL")
+
+    # Temperature override
+    temp_env = os.getenv("RAG_TEMPERATURE") or os.getenv("OPENAI_TEMPERATURE")
+    if temp_env:
         try:
-            cfg.temperature = float(os.environ["OPENAI_TEMPERATURE"])
+            cfg.temperature = float(temp_env)
         except ValueError:
             pass
 

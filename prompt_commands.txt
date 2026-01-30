@@ -3824,4 +3824,105 @@ ____
 ______
 
 
+The current version of
+
+/home/erick/repo/google_adk_chatbot/README.md
+
+suggests a config file like:
+
+
+OPENAI_API_KEY=...
+OPENAI_LLM_MODEL=gpt-4.1-mini
+OPENAI_EMBEDDING_MODEL=text-embedding-3-small
+OPENAI_TEMPERATURE=0.2
+ADK_LLM_PROVIDER=openai
+ADK_LLM_MODEL=gpt-4.1-mini
+GOOGLE_API_KEY=...
+GOOGLE_GENAI_USE_VERTEXAI=FALSE
+MCP_PORT=8001
+ADK_WEB_PORT=8000
+RAG_MCP_URL=http://localhost:8001/sse
+
+My goal is to improve the project workflow so the minimal configuration it needs to work is:
+
+GOOGLE_API_KEY=...
+GOOGLE_GENAI_USE_VERTEXAI=FALSE
+
+In that case, the  LLM model used for everything is gpt-4.1-mini
+
+and the workflow must be able to configure the default ports so there is no conflict when running
+
+scripts/run_adk_dev.sh
+
+Your tasks are:
+
+1- Study workflow carefully
+2- Fix any dependencies that raise error in case something else than
+
+GOOGLE_API_KEY=...
+GOOGLE_GENAI_USE_VERTEXAI=FALSE
+
+
+is missing from .env file
+
+___
+
+Make small improvements in
+
+/home/erick/repo/google_adk_chatbot/README.md
+
+So the user knows that this a chatbot specialized in delivering not-hallucinated google-adk (not a general chat)
+Also, make clear that the user is able to consume only the RAG pipeline in its own agent via the MCP server, and also can run the full chatbot
+
+____
+
+I am worried this initial command:
+
+# 1. Ingest the documentation (one-time)
+python rag/run_adk_ingest.py
+
+requires the OPENAI_API_KEY
+Please check this
+
+____
+
+I see you changed some config values. Would this .env I have still work:
+
+OPENAI_API_KEY=...
+OPENAI_LLM_MODEL=gpt-4.1-mini
+OPENAI_EMBEDDING_MODEL=text-embedding-3-small
+OPENAI_TEMPERATURE=0.2
+
+ADK_LLM_PROVIDER=openai
+ADK_LLM_MODEL=gpt-4.1-mini
+
+GOOGLE_API_KEY=...
+GOOGLE_GENAI_USE_VERTEXAI=FALSE
+
+MCP_PORT=8001
+ADK_WEB_PORT=8000
+RAG_MCP_URL=http://localhost:8001/sse
+ADK_LOG_LEVEL=DEBUG
+
+?
+
+Revisit the config example in
+
+/home/erick/repo/google_adk_chatbot/README.md
+
+So it uses gpt-4.1-mini and it is descriptive of all available options
+
+____
+
+Examine the workflow to change default gemini model to
+
+gemini-2.5-flash-lite
+
+wherever it is
+
+
+
+
+
+
 

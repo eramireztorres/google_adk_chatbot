@@ -7,10 +7,22 @@ from typing import Any, Dict, List, Tuple
 
 from langchain_community.vectorstores import FAISS
 from langchain_core.documents import Document
-from langchain_openai import OpenAIEmbeddings
+from langchain_core.embeddings import Embeddings
 
 from .chunking import load_documents, load_documents_with_parents
 from .config import RAGConfig
+
+
+def _create_embeddings(config: RAGConfig) -> Embeddings:
+    """Create embeddings instance based on provider."""
+    if config.llm_provider == "google":
+        from langchain_google_genai import GoogleGenerativeAIEmbeddings
+
+        return GoogleGenerativeAIEmbeddings(model=config.embedding_model)
+    else:
+        from langchain_openai import OpenAIEmbeddings
+
+        return OpenAIEmbeddings(model=config.embedding_model)
 
 
 def ingest_documents(config: RAGConfig) -> List[Document]:
@@ -34,7 +46,7 @@ def ingest_documents_with_parents(
 
 def build_vector_store(config: RAGConfig, documents: List[Document]) -> FAISS:
     """Build a FAISS vector store from documents."""
-    embeddings = OpenAIEmbeddings(model=config.embedding_model)
+    embeddings = _create_embeddings(config)
     return FAISS.from_documents(documents, embeddings)
 
 

@@ -10,10 +10,49 @@ from typing import Any, Dict, List
 from langchain_community.retrievers import BM25Retriever
 from langchain_community.vectorstores import FAISS
 from langchain_core.documents import Document
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from langchain_core.embeddings import Embeddings
+from langchain_core.language_models import BaseChatModel
 
 from .config import RAGConfig
 from .ingest import load_bm25_docs, load_parent_docs
+
+
+def _create_embeddings(config: RAGConfig) -> Embeddings:
+    """Create embeddings instance based on provider."""
+    if config.llm_provider == "google":
+        from langchain_google_genai import GoogleGenerativeAIEmbeddings
+
+        return GoogleGenerativeAIEmbeddings(model=config.embedding_model)
+    else:
+        from langchain_openai import OpenAIEmbeddings
+
+        return OpenAIEmbeddings(model=config.embedding_model)
+
+
+def _create_llm(config: RAGConfig, temperature: float | None = None) -> BaseChatModel:
+    """Create LLM instance based on provider."""
+    temp = temperature if temperature is not None else config.temperature
+
+    if config.llm_provider == "google":
+        from langchain_google_genai import ChatGoogleGenerativeAI
+
+        return ChatGoogleGenerativeAI(model=config.llm_model, temperature=temp)
+    else:
+        from langchain_openai import ChatOpenAI
+
+        return ChatOpenAI(model=config.llm_model, temperature=temp)
+
+
+def _create_rerank_llm(config: RAGConfig) -> BaseChatModel:
+    """Create reranking LLM instance based on provider."""
+    if config.llm_provider == "google":
+        from langchain_google_genai import ChatGoogleGenerativeAI
+
+        return ChatGoogleGenerativeAI(model=config.rerank_model, temperature=0)
+    else:
+        from langchain_openai import ChatOpenAI
+
+        return ChatOpenAI(model=config.rerank_model, temperature=0)
 
 
 @dataclass
@@ -33,14 +72,14 @@ class RAGResponse:
 class RAGSystem:
     def __init__(self, config: RAGConfig):
         self.config = config
-        self.embeddings = OpenAIEmbeddings(model=config.embedding_model)
+        self.embeddings = _create_embeddings(config)
         self.vector_store = self._load_vector_store()
-        self.llm = ChatOpenAI(model=config.llm_model, temperature=config.temperature)
+        self.llm = _create_llm(config)
 
         # Hybrid retrieval components
         self.parent_docs: Dict[str, Document] = {}
         self.bm25_retriever: BM25Retriever | None = None
-        self.rerank_llm: ChatOpenAI | None = None
+        self.rerank_llm: BaseChatModel | None = None
 
         if config.use_hybrid_retrieval:
             self._initialize_hybrid_components()
@@ -68,9 +107,7 @@ class RAGSystem:
 
         # Initialize reranking LLM if enabled
         if self.config.use_llm_reranking:
-            self.rerank_llm = ChatOpenAI(
-                model=self.config.rerank_model, temperature=0
-            )
+            self.rerank_llm = _create_rerank_llm(self.config)
 
     def _detect_requested_language(self, query: str) -> str:
         """Detect the programming language requested in the query."""

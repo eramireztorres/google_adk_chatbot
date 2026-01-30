@@ -2,6 +2,7 @@ langchain
 langchain-openai
 langchain-community
 langchain-text-splitters
+langchain-google-genai
 faiss-cpu
 pinecone-client
 llama-index-core
