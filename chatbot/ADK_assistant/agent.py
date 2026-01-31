@@ -42,6 +42,7 @@ _configure_logging()
 _PROVIDER_DEFAULTS = {
     "google": "gemini-2.5-flash-lite",
     "openai": "gpt-4.1-mini",
+    "ollama": "llama3",
 }
 
 
@@ -56,13 +57,15 @@ def _detect_llm_provider() -> str:
     4. Default to google (requires GOOGLE_API_KEY at runtime)
     """
     explicit = os.getenv("ADK_LLM_PROVIDER", "").strip().lower()
-    if explicit in ("google", "openai"):
+    if explicit in ("google", "openai", "ollama"):
         return explicit
 
     if os.getenv("OPENAI_API_KEY"):
         return "openai"
     if os.getenv("GOOGLE_API_KEY"):
         return "google"
+    if os.getenv("OLLAMA_API_BASE") or os.getenv("ADK_LLM_PROVIDER") == "ollama":
+        return "ollama"
 
     # Default to google - will fail at runtime if GOOGLE_API_KEY not set
     return "google"
@@ -76,6 +79,8 @@ def _resolve_llm_model() -> str | LiteLlm:
 
     if provider == "openai":
         return LiteLlm(model=f"openai/{model}")
+    if provider == "ollama":
+        return LiteLlm(model=f"ollama_chat/{model}")
     # For Google, return the model name directly (ADK handles it natively)
     return model
 

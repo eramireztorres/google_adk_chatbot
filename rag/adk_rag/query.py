@@ -23,6 +23,10 @@ def _create_embeddings(config: RAGConfig) -> Embeddings:
         from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
         return GoogleGenerativeAIEmbeddings(model=config.embedding_model)
+    elif config.llm_provider == "ollama":
+        from langchain_community.embeddings import OllamaEmbeddings
+
+        return OllamaEmbeddings(model=config.embedding_model)
     else:
         from langchain_openai import OpenAIEmbeddings
 
@@ -37,6 +41,10 @@ def _create_llm(config: RAGConfig, temperature: float | None = None) -> BaseChat
         from langchain_google_genai import ChatGoogleGenerativeAI
 
         return ChatGoogleGenerativeAI(model=config.llm_model, temperature=temp)
+    elif config.llm_provider == "ollama":
+        from langchain_community.chat_models import ChatOllama
+
+        return ChatOllama(model=config.llm_model, temperature=temp)
     else:
         from langchain_openai import ChatOpenAI
 
@@ -49,6 +57,10 @@ def _create_rerank_llm(config: RAGConfig) -> BaseChatModel:
         from langchain_google_genai import ChatGoogleGenerativeAI
 
         return ChatGoogleGenerativeAI(model=config.rerank_model, temperature=0)
+    elif config.llm_provider == "ollama":
+        from langchain_community.chat_models import ChatOllama
+
+        return ChatOllama(model=config.rerank_model, temperature=0)
     else:
         from langchain_openai import ChatOpenAI
 

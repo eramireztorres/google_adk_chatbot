@@ -9,8 +9,8 @@ from starlette.requests import Request
 from starlette.responses import Response
 from starlette.routing import Mount, Route
 
-from adk_rag import load_config
-from adk_rag.query import RAGSystem
+from rag.adk_rag import load_config
+from rag.adk_rag.query import RAGSystem
 
 mcp = FastMCP("adk_rag_server")
 _sse_transport = SseServerTransport("/messages/")

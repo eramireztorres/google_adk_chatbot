@@ -19,6 +19,10 @@ def _create_embeddings(config: RAGConfig) -> Embeddings:
         from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
         return GoogleGenerativeAIEmbeddings(model=config.embedding_model)
+    elif config.llm_provider == "ollama":
+        from langchain_community.embeddings import OllamaEmbeddings
+
+        return OllamaEmbeddings(model=config.embedding_model)
     else:
         from langchain_openai import OpenAIEmbeddings
 

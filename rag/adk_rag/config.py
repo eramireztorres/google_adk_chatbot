@@ -20,6 +20,11 @@ PROVIDER_DEFAULTS = {
         "embedding_model": "text-embedding-3-large",
         "rerank_model": "gpt-4.1-mini",
     },
+    "ollama": {
+        "llm_model": "llama3",
+        "embedding_model": "nomic-embed-text",
+        "rerank_model": "llama3",
+    },
 }
 
 
@@ -34,13 +39,15 @@ def _detect_provider() -> str:
     4. Default to google (requires GOOGLE_API_KEY at runtime)
     """
     explicit = os.getenv("RAG_LLM_PROVIDER", "").strip().lower()
-    if explicit in ("google", "openai"):
+    if explicit in ("google", "openai", "ollama"):
         return explicit
 
     if os.getenv("OPENAI_API_KEY"):
         return "openai"
     if os.getenv("GOOGLE_API_KEY"):
         return "google"
+    if os.getenv("OLLAMA_API_BASE") or os.getenv("RAG_LLM_PROVIDER") == "ollama":
+        return "ollama"
 
     # Default to google - will fail at runtime if GOOGLE_API_KEY not set
     return "google"

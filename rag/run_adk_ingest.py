@@ -3,7 +3,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-from adk_rag import load_config, run_ingestion
+from rag.adk_rag import load_config, run_ingestion
 
 
 def main() -> None:
