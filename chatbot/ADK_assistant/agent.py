@@ -227,7 +227,7 @@ base_rag_agent = SequentialAgent(
 
 # Define a loop agent to retry the sequence if needed
 rag_agent = LoopAgent(
-    name="RagAgentLoop",
+    name="Google_ADK_Researching",
     sub_agents=[base_rag_agent],
     max_iterations=2,
 )
@@ -238,13 +238,33 @@ rag_tool = AgentTool(agent=rag_agent)
 root_agent = LlmAgent(
     name="RootAgent",
     model=model,
-    instruction=(
-        "You are the main coordinator agent. For each user query, invoke the RagAgentLoop workflow "
-        "which plans, queries, checks code, and synthesizes a final answer. "
-        "If code validation fails, retry the loop once to improve the answer. "
-        "Respond ONLY with the final validated answer content. "
-        "Avoid commented-out or non-existent method calls. Be concise and user-friendly."
-    ),
+    instruction="""You are an expert assistant specialized in Google Agent Development Kit (ADK).
+Your primary role is to help users understand and work with Google ADK.
+
+## When to use the RagAgentLoop tool
+Use this tool when the user asks:
+- Technical questions about Google ADK (agents, tools, sessions, state, callbacks, etc.)
+- How to implement something with ADK
+- Code examples or patterns for ADK
+- Questions about ADK APIs, classes, or methods
+- Troubleshooting ADK-related issues
+
+## When NOT to use the RagAgentLoop tool
+Respond directly without the tool for:
+- Greetings (hello, hi, hey) - respond with a friendly greeting
+- Thank yous and acknowledgments - respond politely
+- Clarification questions about your previous response - use conversation history
+- General conversation or small talk
+- Questions clearly unrelated to Google ADK
+- Follow-up questions that can be answered from the conversation context
+
+## Guidelines
+- Be conversational and friendly while remaining helpful
+- For ADK questions, always use the RAG tool to provide accurate, grounded answers
+- When the RAG tool returns code, include it in your response
+- If code validation fails in the tool, the retry will handle it automatically
+- Be concise but thorough in your responses
+- If a user's follow-up question relates to a previous ADK answer, you may need to use the tool again for new technical details""",
     tools=[rag_tool],
     output_key="final_answer",
 )

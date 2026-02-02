@@ -11,8 +11,9 @@ RAG-based MCP server and multi-agent chatbot for querying Google ADK (Agent Deve
 ### Environment Setup
 ```bash
 python -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
+source venv/bin/activate          # Linux/macOS
+# venv\Scripts\activate           # Windows
+pip install -e .                  # Editable install (recommended)
 ```
 
 ### Running Tests
@@ -36,8 +37,11 @@ python rag/run_adk_mcp_server.py --port 8001
 
 ### Start Full Development Environment
 ```bash
-bash scripts/run_adk_dev.sh  # Starts MCP server + ADK web interface
+bash scripts/run_adk_dev.sh       # Linux/macOS
+scripts\run_adk_dev.bat           # Windows CMD
+.\scripts\run_adk_dev.ps1         # Windows PowerShell
 ```
+Starts MCP server (port 8001) + ADK web interface (port 8000).
 
 ### Entry Points (after pip install -e .)
 ```bash
@@ -50,10 +54,10 @@ adk-rag-server   # MCP server
 ### Two Main Components
 
 1. **RAG System** (`rag/adk_rag/`)
-   - `config.py`: RAGConfig dataclass, loads from `config.yaml` + env vars
+   - `config.py`: RAGConfig dataclass, loads from `config.yaml` + env vars, auto-detects provider
    - `ingest.py`: Document ingestion pipeline
    - `chunking.py`: Custom chunking (separates code blocks, removes nav noise, splits by headers)
-   - `query.py`: RAGSystem class - loads FAISS index, retrieves docs, generates answers
+   - `query.py`: RAGSystem class - hybrid retrieval (FAISS + BM25), LLM reranking, answer generation
    - Vector store: FAISS (index stored in `rag/adk_rag/index/`)
 
 2. **Agent System** (`chatbot/ADK_assistant/agent.py`)
@@ -80,11 +84,24 @@ RootAgent (LlmAgent)
 
 ### Configuration
 
-Environment variables override `rag/adk_rag/config.yaml`. Required: `OPENAI_API_KEY`. Key vars:
-- `ADK_LLM_MODEL`: Model for agents (default: gpt-4.1-mini)
-- `OPENAI_EMBEDDING_MODEL`: Embedding model (default: text-embedding-3-small)
-- `RAG_MCP_URL`: MCP server endpoint
-- `MCP_PORT`, `ADK_WEB_PORT`: Server ports
+Environment variables override `rag/adk_rag/config.yaml`. Required: `OPENAI_API_KEY` or `GOOGLE_API_KEY`.
+
+**Provider Auto-Detection** (in order of precedence):
+1. `RAG_LLM_PROVIDER` / `ADK_LLM_PROVIDER` env var explicitly set
+2. `OPENAI_API_KEY` present → OpenAI
+3. `GOOGLE_API_KEY` present → Google
+4. `OLLAMA_API_BASE` present → Ollama
+
+**Key Environment Variables:**
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `RAG_LLM_PROVIDER` | Provider for RAG (`openai`, `google`, `ollama`) | auto-detect |
+| `RAG_LLM_MODEL` | LLM for RAG answers | gpt-4.1-mini / gemini-2.5-flash-lite |
+| `RAG_EMBEDDING_MODEL` | Embedding model | text-embedding-3-large / text-embedding-004 |
+| `ADK_LLM_MODEL` | LLM for agent system | gpt-4.1-mini / gemini-2.5-flash-lite |
+| `RAG_MCP_URL` | MCP server endpoint | http://localhost:8001/sse |
+| `MCP_PORT` | RAG server port | 8001 |
+| `ADK_WEB_PORT` | Web UI port | 8000 |
 
 ## Key Patterns
 
